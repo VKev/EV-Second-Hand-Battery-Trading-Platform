@@ -29,7 +29,7 @@ data class Battery(
     val capacity: Int,
     val year: Int,
     val health: Int?,
-    val specifications: BatterySpecifications,
+    val specifications: BatterySpecifications?,
     val isVerified: Boolean,
     val createdAt: String,
     val updatedAt: String,
@@ -38,12 +38,12 @@ data class Battery(
 
 @Serializable
 data class BatterySpecifications(
-    val weight: String,
-    val voltage: String,
-    val chemistry: String,
-    val degradation: String,
-    val chargingTime: String,
-    val installation: String,
-    val warrantyPeriod: String,
-    val temperatureRange: String
+    val weight: String? = null,
+    val voltage: String? = null,
+    val chemistry: String? = null,
+    val degradation: String? = null,
+    val chargingTime: String? = null,
+    val installation: String? = null,
+    val warrantyPeriod: String? = null,
+    val temperatureRange: String? = null
 )

@@ -64,7 +64,17 @@ class AuthRepository(
         }
     }
     
-    fun logout() {
+    suspend fun logout() {
+        try {
+            authApi.logout()
+        } catch (e: Exception) {
+            // Log error but still clear local data
+        } finally {
+            clearLocalData()
+        }
+    }
+    
+    fun clearLocalData() {
         prefs.edit().clear().apply()
     }
     

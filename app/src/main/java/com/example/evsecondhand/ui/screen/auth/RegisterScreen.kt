@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ElectricBolt
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -78,12 +79,24 @@ fun RegisterScreen(
             verticalArrangement = Arrangement.Center
         ) {
             // Logo/Title
-            Text(
-                text = "⚡ EV Market",
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold,
-                color = PrimaryGreen
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ElectricBolt,
+                    contentDescription = "EV Market",
+                    tint = PrimaryGreen,
+                    modifier = Modifier.size(36.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "EV Market",
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryGreen
+                )
+            }
             
             Spacer(modifier = Modifier.height(8.dp))
             

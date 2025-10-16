@@ -79,9 +79,18 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     fun logout() {
-        repository.logout()
-        _isLoggedIn.value = false
-        _authState.value = AuthState.LoggedOut
+        viewModelScope.launch {
+            try {
+                repository.logout()
+                _isLoggedIn.value = false
+                _authState.value = AuthState.LoggedOut
+            } catch (e: Exception) {
+                // Even if API call fails, still logout locally
+                repository.clearLocalData()
+                _isLoggedIn.value = false
+                _authState.value = AuthState.LoggedOut
+            }
+        }
     }
     
     fun resetState() {

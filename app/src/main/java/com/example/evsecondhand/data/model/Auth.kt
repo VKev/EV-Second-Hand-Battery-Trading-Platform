@@ -38,3 +38,8 @@ data class User(
     val createdAt: String,
     val updatedAt: String
 )
+
+@Serializable
+data class LogoutResponse(
+    val message: String
+)
