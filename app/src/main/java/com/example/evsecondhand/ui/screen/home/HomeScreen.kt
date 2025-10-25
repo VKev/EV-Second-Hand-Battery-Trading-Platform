@@ -43,6 +43,8 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel,
+    onBatteryClick: (String) -> Unit,
+    onVehicleClick: (String) -> Unit,
     chatbotViewModel: ChatbotViewModel = viewModel()
 ) {
     val state by homeViewModel.state.collectAsState()
@@ -188,7 +190,10 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(state.batteries) { battery ->
-                                BatteryCard(battery = battery)
+                                BatteryCard(
+                                    battery = battery,
+                                    onClick = { onBatteryClick(battery.id) }
+                                )
                             }
                             
                             if (state.isLoadingBatteries) {
@@ -277,7 +282,10 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(state.vehicles) { vehicle ->
-                                VehicleCard(vehicle = vehicle)
+                                VehicleCard(
+                                    vehicle = vehicle,
+                                    onClick = { onVehicleClick(vehicle.id) }
+                                )
                             }
                             
                             if (state.isLoadingVehicles) {
@@ -308,14 +316,17 @@ fun HomeScreen(
 }
 
 @Composable
-fun BatteryCard(battery: Battery) {
+fun BatteryCard(
+    battery: Battery,
+    onClick: () -> Unit = {}
+) {
     val formatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
     
     Card(
         modifier = Modifier
             .width(280.dp)
             .height(280.dp)
-            .clickable { },
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(4.dp)
@@ -416,14 +427,17 @@ fun BatteryCard(battery: Battery) {
 }
 
 @Composable
-fun VehicleCard(vehicle: Vehicle) {
+fun VehicleCard(
+    vehicle: Vehicle,
+    onClick: () -> Unit = {}
+) {
     val formatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
     
     Card(
         modifier = Modifier
             .width(280.dp)
             .height(280.dp)
-            .clickable { },
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(4.dp)

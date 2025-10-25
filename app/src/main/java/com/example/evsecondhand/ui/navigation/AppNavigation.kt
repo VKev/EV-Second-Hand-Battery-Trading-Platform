@@ -15,14 +15,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.navArgument
 import androidx.navigation.compose.rememberNavController
 import com.example.evsecondhand.ui.screen.*
+import com.example.evsecondhand.ui.screen.battery.BatteryDetailScreen
 import com.example.evsecondhand.ui.screen.auth.LoginScreen
 import com.example.evsecondhand.ui.screen.auth.RegisterScreen
 import com.example.evsecondhand.ui.screen.home.HomeScreen
+import com.example.evsecondhand.ui.screen.vehicle.VehicleDetailScreen
 import com.example.evsecondhand.ui.theme.PrimaryGreen
 import com.example.evsecondhand.ui.viewmodel.AuthViewModel
 import com.example.evsecondhand.ui.viewmodel.HomeViewModel
@@ -98,7 +102,45 @@ fun AppNavigation(
             }
             
             composable(Screen.Home.route) {
-                HomeScreen(homeViewModel = homeViewModel)
+                HomeScreen(
+                    homeViewModel = homeViewModel,
+                    onBatteryClick = { batteryId ->
+                        navController.navigate(Screen.BatteryDetail.createRoute(batteryId))
+                    },
+                    onVehicleClick = { vehicleId ->
+                        navController.navigate(Screen.VehicleDetail.createRoute(vehicleId))
+                    }
+                )
+            }
+
+            composable(
+                route = Screen.BatteryDetail.route,
+                arguments = listOf(navArgument("batteryId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val batteryId = backStackEntry.arguments?.getString("batteryId")
+                if (batteryId == null) {
+                    navController.popBackStack()
+                } else {
+                    BatteryDetailScreen(
+                        batteryId = batteryId,
+                        onBackClick = { navController.popBackStack() }
+                    )
+                }
+            }
+
+            composable(
+                route = Screen.VehicleDetail.route,
+                arguments = listOf(navArgument("vehicleId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val vehicleId = backStackEntry.arguments?.getString("vehicleId")
+                if (vehicleId == null) {
+                    navController.popBackStack()
+                } else {
+                    VehicleDetailScreen(
+                        vehicleId = vehicleId,
+                        onBackClick = { navController.popBackStack() }
+                    )
+                }
             }
             
             composable(Screen.Products.route) {

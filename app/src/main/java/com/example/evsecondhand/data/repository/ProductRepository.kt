@@ -64,4 +64,26 @@ class ProductRepository(
             Result.failure(e)
         }
     }
+
+    suspend fun getBatteryDetail(id: String): Result<Battery> {
+        return try {
+            Log.d(TAG, "Fetching battery detail - id: $id")
+            val response = productApi.getBatteryDetail(id)
+            Result.success(response.data.battery)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching battery detail", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getVehicleDetail(id: String): Result<Vehicle> {
+        return try {
+            Log.d(TAG, "Fetching vehicle detail - id: $id")
+            val response = productApi.getVehicleDetail(id)
+            Result.success(response.data.vehicle)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching vehicle detail", e)
+            Result.failure(e)
+        }
+    }
 }

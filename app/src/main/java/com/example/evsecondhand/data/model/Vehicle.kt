@@ -29,48 +29,67 @@ data class Vehicle(
     val model: String,
     val year: Int,
     val mileage: Int,
-    val specifications: VehicleSpecifications,
+    val specifications: VehicleSpecifications? = null,
     val isVerified: Boolean,
+    val isAuction: Boolean? = null,
+    val auctionStartsAt: String? = null,
+    val auctionEndsAt: String? = null,
+    val startingPrice: Int? = null,
+    val bidIncrement: Int? = null,
+    val depositAmount: Int? = null,
+    val auctionRejectionReason: String? = null,
     val createdAt: String,
     val updatedAt: String,
-    val sellerId: String
+    val sellerId: String,
+    val seller: Seller? = null
 )
 
 @Serializable
 data class VehicleSpecifications(
-    val warranty: Warranty,
-    val dimensions: Dimensions,
-    val performance: Performance,
-    val batteryAndCharging: BatteryAndCharging
+    val warranty: Warranty? = null,
+    val dimensions: Dimensions? = null,
+    val performance: Performance? = null,
+    val batteryAndCharging: BatteryAndCharging? = null
 )
 
 @Serializable
 data class Warranty(
-    val basic: String,
-    val battery: String,
-    val drivetrain: String
+    val basic: String? = null,
+    val battery: String? = null,
+    val drivetrain: String? = null
 )
 
 @Serializable
 data class Dimensions(
-    val width: String,
-    val height: String,
-    val length: String,
-    val curbWeight: String
+    val width: String? = null,
+    val height: String? = null,
+    val length: String? = null,
+    val curbWeight: String? = null
 )
 
 @Serializable
 data class Performance(
-    val topSpeed: String,
-    val motorType: String,
-    val horsepower: String,
-    val acceleration: String
+    val topSpeed: String? = null,
+    val motorType: String? = null,
+    val horsepower: String? = null,
+    val acceleration: String? = null
 )
 
 @Serializable
 data class BatteryAndCharging(
-    val range: String,
-    val chargeTime: String,
-    val chargingSpeed: String,
-    val batteryCapacity: String
+    val range: String? = null,
+    val chargeTime: String? = null,
+    val chargingSpeed: String? = null,
+    val batteryCapacity: String? = null
+)
+
+@Serializable
+data class VehicleDetailResponse(
+    val message: String,
+    val data: VehicleDetailData
+)
+
+@Serializable
+data class VehicleDetailData(
+    val vehicle: Vehicle
 )

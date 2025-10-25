@@ -31,9 +31,17 @@ data class Battery(
     val health: Int?,
     val specifications: BatterySpecifications?,
     val isVerified: Boolean,
+    val isAuction: Boolean? = null,
+    val auctionStartsAt: String? = null,
+    val auctionEndsAt: String? = null,
+    val startingPrice: Int? = null,
+    val bidIncrement: Int? = null,
+    val depositAmount: Int? = null,
+    val auctionRejectionReason: String? = null,
     val createdAt: String,
     val updatedAt: String,
-    val sellerId: String
+    val sellerId: String,
+    val seller: Seller? = null
 )
 
 @Serializable
@@ -46,4 +54,22 @@ data class BatterySpecifications(
     val installation: String? = null,
     val warrantyPeriod: String? = null,
     val temperatureRange: String? = null
+)
+
+@Serializable
+data class Seller(
+    val id: String,
+    val name: String,
+    val avatar: String? = null
+)
+
+@Serializable
+data class BatteryDetailResponse(
+    val message: String,
+    val data: BatteryDetailData
+)
+
+@Serializable
+data class BatteryDetailData(
+    val battery: Battery
 )
