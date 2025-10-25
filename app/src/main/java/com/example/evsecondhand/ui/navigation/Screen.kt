@@ -1,0 +1,11 @@
+package com.example.evsecondhand.ui.navigation
+
+sealed class Screen(val route: String) {
+    object Login : Screen("login")
+    object Register : Screen("register")
+    object Home : Screen("home")
+    object Products : Screen("products")
+    object AddPost : Screen("add_post")
+    object Wallet : Screen("wallet")
+    object Profile : Screen("profile")
+}
