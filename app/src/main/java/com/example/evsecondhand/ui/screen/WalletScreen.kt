@@ -19,10 +19,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.evsecondhand.data.model.Transaction
-import com.example.evsecondhand.data.model.TransactionType
 import com.example.evsecondhand.ui.theme.PrimaryGreen
 import com.example.evsecondhand.ui.theme.TextSecondary
 import com.example.evsecondhand.ui.viewmodel.WalletViewModel
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -35,72 +36,111 @@ fun WalletScreen(
     val state by viewModel.state.collectAsState()
     val currencyFormatter = remember {
         NumberFormat.getInstance(Locale.US).apply {
-            maximumFractionDigits = 3
+            maximumFractionDigits = 0
         }
     }
     val dateFormatter = remember {
         SimpleDateFormat("HH:mm dd/MM/yyyy", Locale.getDefault())
     }
 
-    // Không dùng Scaffold với TopAppBar nữa, chỉ dùng LazyColumn
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF5F5F5)),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    SwipeRefresh(
+        state = rememberSwipeRefreshState(isRefreshing = state.isLoading),
+        onRefresh = { viewModel.refresh() }
     ) {
-        // Header - Wallet Management
-        item {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text(
-                    text = "Wallet Management",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Manage your funds for auctions and purchases\non EcoTrade EV",
-                    fontSize = 14.sp,
-                    color = TextSecondary,
-                    lineHeight = 20.sp
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF5F5F5)),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Header
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(
+                        text = "Wallet Management",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Manage your funds for auctions and purchases\non EcoTrade EV",
+                        fontSize = 14.sp,
+                        color = TextSecondary,
+                        lineHeight = 20.sp
+                    )
+                }
+            }
+
+            // Error Message
+            state.error?.let { error ->
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Error,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                            Text(
+                                text = error,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Balance Card
+            item {
+                BalanceCard(
+                    availableBalance = state.availableBalance,
+                    lockedBalance = state.lockedBalance,
+                    currencyFormatter = currencyFormatter,
+                    isLoading = state.isLoading,
+                    onDeposit = { viewModel.depositFunds() },
+                    onWithdraw = { viewModel.withdrawFunds() }
                 )
             }
-        }
 
-        // Balance Card
-        item {
-            BalanceCard(
-                balance = state.balance,
-                currencyFormatter = currencyFormatter,
-                onDeposit = { viewModel.depositFunds() },
-                onWithdraw = { viewModel.withdrawFunds() }
-            )
-        }
-
-        // Transaction History
-        item {
-            TransactionHistoryCard(
-                transactions = state.transactions,
-                currentPage = state.currentPage,
-                totalPages = state.totalPages,
-                totalTransactions = state.totalTransactions,
-                onPageChange = { viewModel.loadTransactions(it) },
-                currencyFormatter = currencyFormatter,
-                dateFormatter = dateFormatter
-            )
+            // Transaction History
+            item {
+                TransactionHistoryCard(
+                    transactions = state.transactions,
+                    currentPage = state.currentPage,
+                    totalPages = state.totalPages,
+                    totalTransactions = state.transactions.size,
+                    isLoading = state.isLoadingTransactions,
+                    onPageChange = { viewModel.loadTransactions(it) },
+                    currencyFormatter = currencyFormatter,
+                    dateFormatter = dateFormatter
+                )
+            }
         }
     }
 }
 
 @Composable
 private fun BalanceCard(
-    balance: Double,
+    availableBalance: Double,
+    lockedBalance: Double,
     currencyFormatter: NumberFormat,
+    isLoading: Boolean,
     onDeposit: () -> Unit,
     onWithdraw: () -> Unit
 ) {
@@ -115,28 +155,67 @@ private fun BalanceCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Current Balance",
+                text = "Available Balance",
                 fontSize = 14.sp,
                 color = TextSecondary
             )
             
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 12.dp)
-            ) {
-                Text(
-                    text = "${currencyFormatter.format(balance)} ",
-                    fontSize = 40.sp,
-                    fontWeight = FontWeight.Bold,
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .padding(vertical = 12.dp),
                     color = PrimaryGreen
                 )
-                Text(
-                    text = "đ",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryGreen
-                )
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(vertical = 12.dp)
+                ) {
+                    Text(
+                        text = "${currencyFormatter.format(availableBalance)} ",
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryGreen
+                    )
+                    Text(
+                        text = "đ",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryGreen
+                    )
+                }
             }
+            
+            // Locked Balance
+            if (lockedBalance > 0) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFFFF9E6)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = Color(0xFFE65100),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "Locked: ${currencyFormatter.format(lockedBalance)} đ",
+                            fontSize = 12.sp,
+                            color = Color(0xFFE65100),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -148,7 +227,8 @@ private fun BalanceCard(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = PrimaryGreen
                     ),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(8.dp),
+                    enabled = !isLoading
                 ) {
                     Text("Deposit Funds", fontSize = 14.sp)
                 }
@@ -159,7 +239,8 @@ private fun BalanceCard(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF2196F3)
                     ),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(8.dp),
+                    enabled = !isLoading
                 ) {
                     Text("Withdraw", fontSize = 14.sp)
                 }
@@ -174,6 +255,7 @@ private fun TransactionHistoryCard(
     currentPage: Int,
     totalPages: Int,
     totalTransactions: Int,
+    isLoading: Boolean,
     onPageChange: (Int) -> Unit,
     currencyFormatter: NumberFormat,
     dateFormatter: SimpleDateFormat
@@ -223,58 +305,69 @@ private fun TransactionHistoryCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Scrollable table
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-            ) {
-                Column {
-                    // Table Header
-                    TransactionTableHeader()
-                    
-                    Divider(
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        color = Color(0xFFE0E0E0)
-                    )
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = PrimaryGreen)
+                }
+            } else {
+                // Scrollable table
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                ) {
+                    Column {
+                        // Table Header
+                        TransactionTableHeader()
+                        
+                        Divider(
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            color = Color(0xFFE0E0E0)
+                        )
 
-                    // Transaction Rows
-                    if (transactions.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No transactions yet",
-                                color = TextSecondary,
-                                fontSize = 14.sp
-                            )
-                        }
-                    } else {
-                        transactions.forEach { transaction ->
-                            TransactionTableRow(
-                                transaction = transaction,
-                                currencyFormatter = currencyFormatter,
-                                dateFormatter = dateFormatter
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
+                        // Transaction Rows
+                        if (transactions.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No transactions yet",
+                                    color = TextSecondary,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        } else {
+                            transactions.forEach { transaction ->
+                                TransactionTableRow(
+                                    transaction = transaction,
+                                    currencyFormatter = currencyFormatter,
+                                    dateFormatter = dateFormatter
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Pagination
+                PaginationRow(
+                    currentPage = currentPage,
+                    totalPages = totalPages,
+                    totalTransactions = totalTransactions,
+                    displayedCount = transactions.size,
+                    onPageChange = onPageChange
+                )
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Pagination
-            PaginationRow(
-                currentPage = currentPage,
-                totalPages = totalPages,
-                totalTransactions = totalTransactions,
-                displayedCount = transactions.size,
-                onPageChange = onPageChange
-            )
         }
     }
 }
@@ -318,7 +411,7 @@ private fun TransactionTableRow(
     ) {
         // Date
         Text(
-            text = dateFormatter.format(parseTransactionDate(transaction.date)),
+            text = dateFormatter.format(parseTransactionDate(transaction.createdAt)),
             fontSize = 13.sp,
             modifier = Modifier.width(160.dp)
         )
@@ -330,7 +423,7 @@ private fun TransactionTableRow(
             modifier = Modifier.width(140.dp)
         ) {
             Text(
-                text = getTypeText(transaction.type),
+                text = getTypeDisplayText(transaction.type),
                 fontSize = 12.sp,
                 color = getTypeTextColor(transaction.type),
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -340,7 +433,7 @@ private fun TransactionTableRow(
 
         // Description
         Text(
-            text = transaction.description,
+            text = transaction.description ?: "-",
             fontSize = 13.sp,
             modifier = Modifier.width(300.dp),
             maxLines = 2
@@ -357,7 +450,7 @@ private fun TransactionTableRow(
 
         // Status
         StatusBadge(
-            status = getTransactionStatus(transaction),
+            status = transaction.status,
             modifier = Modifier.width(120.dp)
         )
     }
@@ -367,9 +460,9 @@ private fun TransactionTableRow(
 private fun StatusBadge(status: String, modifier: Modifier = Modifier) {
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = when (status) {
-            "Completed" -> Color(0xFFE8F5E9)
-            "Pending" -> Color(0xFFFFF9C4)
+        color = when (status.uppercase()) {
+            "COMPLETED" -> Color(0xFFE8F5E9)
+            "PENDING" -> Color(0xFFFFF9C4)
             "CANCELLED" -> Color(0xFFFFEBEE)
             else -> Color(0xFFF5F5F5)
         },
@@ -378,9 +471,9 @@ private fun StatusBadge(status: String, modifier: Modifier = Modifier) {
         Text(
             text = status,
             fontSize = 12.sp,
-            color = when (status) {
-                "Completed" -> Color(0xFF2E7D32)
-                "Pending" -> Color(0xFFF57F17)
+            color = when (status.uppercase()) {
+                "COMPLETED" -> Color(0xFF2E7D32)
+                "PENDING" -> Color(0xFFF57F17)
                 "CANCELLED" -> Color(0xFFC62828)
                 else -> TextSecondary
             },
@@ -463,25 +556,31 @@ private fun PaginationRow(
 }
 
 // Helper functions
-private fun getTypeText(type: TransactionType): String = when (type) {
-    TransactionType.DEPOSIT -> "Deposit"
-    TransactionType.WITHDRAWAL -> "Withdraw"
-    TransactionType.PURCHASE -> "Purchase"
-    TransactionType.AUCTION_BID -> "Auction Bid"
+private fun getTypeDisplayText(type: String): String = when (type.uppercase()) {
+    "DEPOSIT" -> "Deposit"
+    "WITHDRAWAL" -> "Withdraw"
+    "AUCTION_DEPOSIT" -> "Auction Deposit"
+    "AUCTION_BID" -> "Auction Bid"
+    "PURCHASE" -> "Purchase"
+    else -> type
 }
 
-private fun getTypeBackgroundColor(type: TransactionType): Color = when (type) {
-    TransactionType.DEPOSIT -> Color(0xFFE8F5E9)
-    TransactionType.WITHDRAWAL -> Color(0xFFFCE4EC)
-    TransactionType.PURCHASE -> Color(0xFFF3E5F5)
-    TransactionType.AUCTION_BID -> Color(0xFFE3F2FD)
+private fun getTypeBackgroundColor(type: String): Color = when (type.uppercase()) {
+    "DEPOSIT" -> Color(0xFFE8F5E9)
+    "WITHDRAWAL" -> Color(0xFFFCE4EC)
+    "AUCTION_DEPOSIT" -> Color(0xFFE3F2FD)
+    "AUCTION_BID" -> Color(0xFFE3F2FD)
+    "PURCHASE" -> Color(0xFFF3E5F5)
+    else -> Color(0xFFF5F5F5)
 }
 
-private fun getTypeTextColor(type: TransactionType): Color = when (type) {
-    TransactionType.DEPOSIT -> Color(0xFF2E7D32)
-    TransactionType.WITHDRAWAL -> Color(0xFFC2185B)
-    TransactionType.PURCHASE -> Color(0xFF7B1FA2)
-    TransactionType.AUCTION_BID -> Color(0xFF1976D2)
+private fun getTypeTextColor(type: String): Color = when (type.uppercase()) {
+    "DEPOSIT" -> Color(0xFF2E7D32)
+    "WITHDRAWAL" -> Color(0xFFC2185B)
+    "AUCTION_DEPOSIT" -> Color(0xFF1976D2)
+    "AUCTION_BID" -> Color(0xFF1976D2)
+    "PURCHASE" -> Color(0xFF7B1FA2)
+    else -> TextSecondary
 }
 
 private fun formatAmount(amount: Double, formatter: NumberFormat): String {
@@ -489,20 +588,9 @@ private fun formatAmount(amount: Double, formatter: NumberFormat): String {
     return "$prefix${formatter.format(amount)} đ"
 }
 
-private fun getTransactionStatus(transaction: Transaction): String {
-    // Mock logic - replace with actual status from transaction
-    return when {
-        transaction.amount == -2000.0 -> "Completed"
-        transaction.amount == 2000.0 -> if (transaction.id == "2" || transaction.id == "4") "CANCELLED" else "Completed"
-        transaction.amount == 5000.0 -> if (transaction.id == "4") "CANCELLED" else "Completed"
-        transaction.amount == 50.0 -> if (transaction.id == "6" || transaction.id == "7") "Pending" else "Completed"
-        else -> "Completed"
-    }
-}
-
 private fun parseTransactionDate(dateString: String): Date {
     return try {
-        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(dateString) ?: Date()
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()).parse(dateString) ?: Date()
     } catch (e: Exception) {
         Date()
     }

@@ -2,47 +2,63 @@ package com.example.evsecondhand.data.model
 
 import kotlinx.serialization.Serializable
 
+// Wallet Balance Models
+@Serializable
+data class WalletBalanceResponse(
+    val message: String,
+    val data: WalletBalance
+)
+
 @Serializable
 data class WalletBalance(
-    val balance: Double,
-    val currency: String = "VND"
-)
-
-@Serializable
-data class PaymentMethod(
     val id: String,
-    val type: PaymentMethodType,
-    val lastFourDigits: String,
-    val isActive: Boolean,
-    val displayName: String
+    val userId: String,
+    val availableBalance: Double,
+    val lockedBalance: Double,
+    val createdAt: String,
+    val updatedAt: String
 )
 
-enum class PaymentMethodType {
-    BANK_ACCOUNT,
-    CREDIT_CARD,
-    PAYPAL
-}
+// Transaction History Models
+@Serializable
+data class TransactionHistoryResponse(
+    val message: String,
+    val data: TransactionHistoryData
+)
 
 @Serializable
-data class AuctionFundsHold(
-    val amount: Double,
-    val description: String,
-    val currency: String = "VND"
+data class TransactionHistoryData(
+    val transactions: List<Transaction>,
+    val page: Int,
+    val limit: Int,
+    val totalPages: Int,
+    val totalResults: Int
 )
 
 @Serializable
 data class Transaction(
     val id: String,
-    val date: String,
-    val type: TransactionType,
-    val description: String,
+    val walletId: String,
+    val type: String, // DEPOSIT, WITHDRAWAL, AUCTION_DEPOSIT, etc.
     val amount: Double,
-    val currency: String = "VND"
+    val status: String, // COMPLETED, PENDING, CANCELLED
+    val gateway: String, // MOMO, INTERNAL, etc.
+    val gatewayTransId: String? = null,
+    val description: String? = null,
+    val createdAt: String,
+    val updatedAt: String
 )
 
 enum class TransactionType {
     DEPOSIT,
     WITHDRAWAL,
     PURCHASE,
+    AUCTION_DEPOSIT,
     AUCTION_BID
+}
+
+enum class TransactionStatus {
+    COMPLETED,
+    PENDING,
+    CANCELLED
 }
