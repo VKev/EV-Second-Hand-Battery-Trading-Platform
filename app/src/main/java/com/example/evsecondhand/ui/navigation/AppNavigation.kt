@@ -156,7 +156,18 @@ fun AppNavigation(
             }
             
             composable(Screen.Profile.route) {
-                ProfileScreen(authViewModel = authViewModel)
+                ProfileScreen(
+                    authViewModel = authViewModel,
+                    onNavigateToPurchaseHistory = {
+                        navController.navigate(Screen.PurchaseHistory.route)
+                    }
+                )
+            }
+            
+            composable(Screen.PurchaseHistory.route) {
+                PurchaseHistoryScreen(
+                    onBackClick = { navController.popBackStack() }
+                )
             }
         }
     }
