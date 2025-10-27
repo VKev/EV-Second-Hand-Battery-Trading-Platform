@@ -80,6 +80,9 @@ dependencies {
     // Accompanist
     implementation(libs.accompanist.swiperefresh)
     
+    // Browser for OAuth
+    implementation(libs.androidx.browser)
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

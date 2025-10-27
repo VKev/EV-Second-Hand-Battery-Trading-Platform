@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.evsecondhand.data.model.ChatbotRequest
 import com.example.evsecondhand.data.remote.RetrofitClient
 import com.example.evsecondhand.ui.screen.chatbot.ChatMessage
+import com.example.evsecondhand.utils.ChatbotFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,8 +42,18 @@ class ChatbotViewModel : ViewModel() {
                 val response = chatbotApi.askQuestion(ChatbotRequest(question))
                 Log.d(TAG, "Received answer: ${response.answer}")
                 
-                // Add bot response
-                val botMessage = ChatMessage(text = response.answer, isUser = false)
+                // Parse links from response
+                val links = ChatbotFormatter.parseVehicleLinks(response.answer)
+                
+                // Clean text (remove URLs and format)
+                val cleanText = ChatbotFormatter.getCleanText(response.answer)
+                
+                // Add bot response with links
+                val botMessage = ChatMessage(
+                    text = cleanText,
+                    isUser = false,
+                    links = links
+                )
                 _messages.value = _messages.value + botMessage
                 
             } catch (e: Exception) {
@@ -60,5 +71,10 @@ class ChatbotViewModel : ViewModel() {
     
     fun clearChat() {
         _messages.value = emptyList()
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        Log.d(TAG, "ChatbotViewModel cleared - cancelling all coroutines")
     }
 }

@@ -20,6 +20,7 @@ coil = "2.7.0"
 paging = "3.3.5"
 kotlinxSerializationJson = "1.7.3"
 accompanist = "0.36.0"
+browser = "1.8.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -62,6 +63,9 @@ androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", 
 
 # Accompanist
 accompanist-swiperefresh = { group = "com.google.accompanist", name = "accompanist-swiperefresh", version.ref = "accompanist" }
+
+# Browser
+androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
