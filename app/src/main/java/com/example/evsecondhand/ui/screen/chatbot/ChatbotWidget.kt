@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.*
@@ -27,13 +28,26 @@ import com.example.evsecondhand.ui.viewmodel.ChatbotViewModel
 data class ChatMessage(
     val text: String,
     val isUser: Boolean,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val links: List<ChatLink> = emptyList()
 )
+
+data class ChatLink(
+    val url: String,
+    val title: String,
+    val type: LinkType
+)
+
+enum class LinkType {
+    VEHICLE, BATTERY
+}
 
 @Composable
 fun ChatbotWidget(
     viewModel: ChatbotViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToVehicle: (String) -> Unit = {},
+    onNavigateToBattery: (String) -> Unit = {}
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     var messageText by remember { mutableStateOf("") }
@@ -154,7 +168,11 @@ fun ChatbotWidget(
                         }
 
                         items(messages) { message ->
-                            ChatMessageBubble(message)
+                            ChatMessageBubble(
+                                message = message,
+                                onNavigateToVehicle = onNavigateToVehicle,
+                                onNavigateToBattery = onNavigateToBattery
+                            )
                         }
 
                         if (isLoading) {
@@ -254,11 +272,16 @@ fun ChatbotWidget(
 }
 
 @Composable
-fun ChatMessageBubble(message: ChatMessage) {
-    Row(
+fun ChatMessageBubble(
+    message: ChatMessage,
+    onNavigateToVehicle: (String) -> Unit = {},
+    onNavigateToBattery: (String) -> Unit = {}
+) {
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (message.isUser) Arrangement.End else Arrangement.Start
+        horizontalAlignment = if (message.isUser) Alignment.End else Alignment.Start
     ) {
+        // Message bubble
         Surface(
             shape = RoundedCornerShape(
                 topStart = 12.dp,
@@ -274,6 +297,54 @@ fun ChatMessageBubble(message: ChatMessage) {
                 fontSize = 14.sp,
                 color = if (message.isUser) Color.White else Color.Black
             )
+        }
+        
+        // Links as buttons (only for bot messages)
+        if (!message.isUser && message.links.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Column(
+                modifier = Modifier.fillMaxWidth(0.85f),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                message.links.forEach { link ->
+                    OutlinedButton(
+                        onClick = {
+                            when (link.type) {
+                                LinkType.VEHICLE -> onNavigateToVehicle(link.url)
+                                LinkType.BATTERY -> onNavigateToBattery(link.url)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.White,
+                            contentColor = PrimaryGreen
+                        ),
+                        border = ButtonDefaults.outlinedButtonBorder.copy(
+                            width = 1.dp,
+                            brush = androidx.compose.ui.graphics.SolidColor(PrimaryGreen)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = link.title,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                Icons.Default.OpenInNew,
+                                contentDescription = "Open",
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

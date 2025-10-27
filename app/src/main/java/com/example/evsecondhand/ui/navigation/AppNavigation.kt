@@ -50,20 +50,12 @@ fun AppNavigation(
 ) {
     val navController = rememberNavController()
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
-    val startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route
-    
-    // Navigate to login when logged out
-    LaunchedEffect(isLoggedIn) {
-        if (!isLoggedIn) {
-            navController.navigate(Screen.Login.route) {
-                popUpTo(0) { inclusive = true }
-            }
-        }
-    }
+    // Always start at Home - no need to force login
+    val startDestination = Screen.Home.route
     
     Scaffold(
         bottomBar = {
-            if (isLoggedIn && shouldShowBottomBar(navController)) {
+            if (shouldShowBottomBar(navController)) {
                 BottomNavigationBar(navController = navController, isLoggedIn = isLoggedIn)
             }
         }
@@ -148,26 +140,39 @@ fun AppNavigation(
             }
             
             composable(Screen.AddPost.route) {
-                AddPostScreen()
+                if (!isLoggedIn) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.Home.route) { inclusive = false }
+                        }
+                    }
+                } else {
+                    AddPostScreen()
+                }
             }
             
             composable(Screen.Wallet.route) {
-                WalletScreen()
+                if (!isLoggedIn) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.Home.route) { inclusive = false }
+                        }
+                    }
+                } else {
+                    WalletScreen()
+                }
             }
             
             composable(Screen.Profile.route) {
-                ProfileScreen(
-                    authViewModel = authViewModel,
-                    onNavigateToPurchaseHistory = {
-                        navController.navigate(Screen.PurchaseHistory.route)
+                if (!isLoggedIn) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.Home.route) { inclusive = false }
+                        }
                     }
-                )
-            }
-            
-            composable(Screen.PurchaseHistory.route) {
-                PurchaseHistoryScreen(
-                    onBackClick = { navController.popBackStack() }
-                )
+                } else {
+                    ProfileScreen(authViewModel = authViewModel)
+                }
             }
         }
     }
@@ -186,6 +191,7 @@ fun BottomNavigationBar(
     isLoggedIn: Boolean
 ) {
     val items = if (isLoggedIn) {
+        // Khi đã login: show full menu
         listOf(
             BottomNavItem.Home,
             BottomNavItem.Products,
@@ -194,6 +200,7 @@ fun BottomNavigationBar(
             BottomNavItem.Profile
         )
     } else {
+        // Khi chưa login: chỉ show Home, Products, và Profile (để vào login)
         listOf(
             BottomNavItem.Home,
             BottomNavItem.Products,
