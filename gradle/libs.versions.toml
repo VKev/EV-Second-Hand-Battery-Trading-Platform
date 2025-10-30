@@ -23,6 +23,7 @@ accompanist = "0.36.0"
 foundationAndroid = "1.8.1"
 foundation = "1.9.4"
 foundationLayout = "1.9.4"
+browser = "1.8.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -68,6 +69,9 @@ accompanist-swiperefresh = { group = "com.google.accompanist", name = "accompani
 androidx-compose-foundation-android = { group = "androidx.compose.foundation", name = "foundation-android", version.ref = "foundationAndroid" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
+
+# Browser
+androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

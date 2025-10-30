@@ -1,14 +1,14 @@
 package com.example.evsecondhand.data.repository
 
-import com.example.evsecondhand.data.model.CheckoutRequestBody
+import com.example.evsecondhand.data.model.CheckoutRequest
 import com.example.evsecondhand.data.model.CheckoutResponse
-import com.example.evsecondhand.data.model.TransactionItem
+import com.example.evsecondhand.data.model.Transaction
 import com.example.evsecondhand.data.model.WalletBalance
-import com.example.evsecondhand.data.model.WithdrawRequestBody
-import com.example.evsecondhand.data.remote.PaymentApiService
+import com.example.evsecondhand.data.model.WithdrawRequest
+import com.example.evsecondhand.data.remote.CheckoutApiService
 
 class PaymentRepository(
-    private val api: PaymentApiService,
+    private val api: CheckoutApiService,
     private val accessToken: String
 ) {
 
@@ -18,12 +18,12 @@ class PaymentRepository(
         api.getWalletBalance(authHeader()).data
     }
 
-    suspend fun fetchWalletHistory(): Result<List<TransactionItem>> = runCatching {
-        api.getWalletHistory(authHeader()).data
+    suspend fun fetchWalletHistory(): Result<List<Transaction>> = runCatching {
+        api.getWalletHistory(authHeader()).data.transactions
     }
 
     suspend fun submitWithdraw(amount: Long): Result<String?> = runCatching {
-        api.requestWithdraw(authHeader(), WithdrawRequestBody(amount)).message
+    api.requestWithdraw(authHeader(), WithdrawRequest(amount)).message
     }
 
     suspend fun initiateCheckout(
@@ -33,7 +33,7 @@ class PaymentRepository(
     ): Result<CheckoutResponse> = runCatching {
         api.checkout(
             authHeader(),
-            CheckoutRequestBody(
+            CheckoutRequest(
                 listingId = listingId,
                 listingType = listingType,
                 paymentMethod = paymentMethod

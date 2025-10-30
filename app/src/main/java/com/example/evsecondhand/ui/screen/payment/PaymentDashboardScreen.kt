@@ -136,7 +136,7 @@ private fun PaymentDashboardContent(
     var billingAddress by remember { mutableStateOf("123 Đường ABC, Quận 1, TP.HCM") }
     var agreedToTerms by remember { mutableStateOf(false) }
 
-    val availableBalance = state.balance?.availableBalance ?: 0L
+    val availableBalance = state.balance?.availableBalance?.toLong() ?: 0L
     val checkoutProduct = state.checkoutProduct
     val payableAmount = checkoutProduct?.let { it.price + PLATFORM_FEE } ?: 0L
     val productReady = checkoutProduct != null && !state.isProductLoading && state.productError == null

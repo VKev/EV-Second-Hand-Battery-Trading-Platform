@@ -132,4 +132,9 @@ class HomeViewModel : ViewModel() {
         loadBatteries(1)
         loadVehicles(1)
     }
+    
+    override fun onCleared() {
+        super.onCleared()
+        Log.d(TAG, "HomeViewModel cleared - cancelling all coroutines")
+    }
 }

@@ -68,4 +68,9 @@ class VehicleDetailViewModel : ViewModel() {
             loadVehicle(it, force = true)
         }
     }
+    
+    override fun onCleared() {
+        super.onCleared()
+        // viewModelScope will automatically cancel all coroutines
+    }
 }

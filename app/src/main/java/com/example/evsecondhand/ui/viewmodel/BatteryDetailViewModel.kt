@@ -68,4 +68,9 @@ class BatteryDetailViewModel : ViewModel() {
             loadBattery(it, force = true)
         }
     }
+    
+    override fun onCleared() {
+        super.onCleared()
+        // viewModelScope will automatically cancel all coroutines
+    }
 }

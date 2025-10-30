@@ -1,6 +1,9 @@
 package com.example.evsecondhand.ui.screen.auth
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,11 +24,13 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.evsecondhand.ui.theme.PrimaryGreen
@@ -218,7 +223,61 @@ fun LoginScreen(
                         }
                     }
                     
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                    // Divider with "OR"
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Divider(modifier = Modifier.weight(1f))
+                        Text(
+                            text = "HOẶC",
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = Color.Gray,
+                            fontSize = 12.sp
+                        )
+                        Divider(modifier = Modifier.weight(1f))
+                    }
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    // Google Sign-In Button
+                    OutlinedButton(
+                        onClick = {
+                            authViewModel.loginWithGoogle()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.White,
+                            contentColor = Color.Black
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            // Google Logo - using text as placeholder (you can add actual logo image)
+                            Text(
+                                text = "G",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = PrimaryGreen,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .background(Color.White, shape = RoundedCornerShape(4.dp))
+                                    .padding(2.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text("Đăng nhập với Google", fontSize = 16.sp)
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
                     
                     // Register Link
                     Row(

@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.evsecondhand.data.model.Battery
 import com.example.evsecondhand.data.model.CheckoutPaymentInfo
-import com.example.evsecondhand.data.model.TransactionItem
+import com.example.evsecondhand.data.model.Transaction
 import com.example.evsecondhand.data.model.Vehicle
 import com.example.evsecondhand.data.model.WalletBalance
 import com.example.evsecondhand.data.remote.RetrofitClient
@@ -58,7 +58,7 @@ data class PaymentUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val balance: WalletBalance? = null,
-    val history: List<TransactionItem> = emptyList(),
+    val history: List<Transaction> = emptyList(),
     val checkoutProduct: CheckoutProductSummary? = null,
     val isProductLoading: Boolean = false,
     val productError: String? = null,
@@ -80,7 +80,7 @@ class PaymentViewModel(
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     if (modelClass.isAssignableFrom(PaymentViewModel::class.java)) {
                         val paymentRepository = PaymentRepository(
-                            RetrofitClient.paymentApi,
+                            RetrofitClient.checkoutApi,
                             accessToken
                         )
                         val productRepository = ProductRepository(RetrofitClient.productApi)
@@ -226,7 +226,7 @@ class PaymentViewModel(
                             fetchWalletData()
                             _uiState.value = _uiState.value.copy(
                                 isCheckoutProcessing = false,
-                                checkoutSuccessMessage = response.message.ifBlank { "Thanh toán thành công." },
+                                checkoutSuccessMessage = response.message?.ifBlank { "Thanh toán thành công." },
                                 pendingMomoPayment = null,
                                 navigateToHome = false
                             )
@@ -321,7 +321,7 @@ class PaymentViewModel(
         _uiState.value = currentState.copy(isLoading = true, errorMessage = null)
 
         var latestBalance: WalletBalance? = currentState.balance
-        var latestHistory: List<TransactionItem> = currentState.history
+    var latestHistory: List<Transaction> = currentState.history
         val errors = mutableListOf<String>()
 
         supervisorScope {

@@ -78,6 +78,59 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    fun loginWithGoogle() {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+
+            val result = repository.loginWithGoogle()
+
+            result.onSuccess { url ->
+                // Open Google OAuth URL in browser
+                repository.openGoogleOAuth(url)
+                // Set state to idle - we'll handle the callback separately
+                _authState.value = AuthState.Idle
+            }.onFailure { exception ->
+                _authState.value = AuthState.Error(
+                    exception.message ?: "Failed to start Google Sign-In. Please try again."
+                )
+            }
+        }
+    }
+
+    fun handleGoogleCallback(code: String) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+
+            val result = repository.exchangeCodeForToken(code)
+
+            result.onSuccess { response ->
+                _isLoggedIn.value = true
+                _authState.value = AuthState.Success(response.data.user)
+            }.onFailure { exception ->
+                val errorMessage = when {
+                    exception.message?.contains("401") == true ->
+                        "Mã xác thực không hợp lệ hoặc đã hết hạn. Vui lòng thử lại."
+                    exception.message?.contains("timeout") == true ->
+                        "Kết nối timeout. Vui lòng kiểm tra mạng và thử lại."
+                    exception.message?.contains("Unable to resolve host") == true ->
+                        "Không thể kết nối đến server. Vui lòng kiểm tra mạng."
+                    else ->
+                        "Đăng nhập Google thất bại. Vui lòng thử lại."
+                }
+                _authState.value = AuthState.Error(errorMessage)
+            }
+        }
+    }
+
+    fun handleOAuthError(error: String) {
+        val errorMessage = when (error) {
+            "access_denied" -> "Bạn đã từ chối quyền truy cập. Vui lòng thử lại."
+            "invalid_request" -> "Yêu cầu không hợp lệ. Vui lòng thử lại."
+            else -> "Đăng nhập Google bị hủy hoặc lỗi: $error"
+        }
+        _authState.value = AuthState.Error(errorMessage)
+    }
+
     fun logout() {
         viewModelScope.launch {
             try {
@@ -100,4 +153,9 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun getAccessToken(): String? = repository.getAccessToken()
 
     fun getCurrentUser(): User? = repository.getCurrentUser()
+
+    override fun onCleared() {
+        super.onCleared()
+        // viewModelScope will automatically cancel all coroutines
+    }
 }

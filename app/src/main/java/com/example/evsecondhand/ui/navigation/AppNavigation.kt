@@ -144,7 +144,6 @@ fun AppNavigation(
                 }
             }
 
-
             composable(
                 route = Screen.VehicleDetail.route,
                 arguments = listOf(navArgument("vehicleId") { type = NavType.StringType })
@@ -216,7 +215,15 @@ fun AppNavigation(
             }
             
             composable(Screen.Wallet.route) {
-                WalletScreen()
+                if (!isLoggedIn) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.Home.route) { inclusive = false }
+                        }
+                    }
+                } else {
+                    WalletScreen()
+                }
             }
 
             composable(
@@ -262,17 +269,38 @@ fun AppNavigation(
                     )
                 }
             }
-            
+
             composable(Screen.Profile.route) {
-                ProfileScreen(
-                    authViewModel = authViewModel,
-                    onSellerDashboardClick = {
-                        navController.navigate(Screen.SellerDashboard.route)
-                    },
-                    onPaymentDashboard = {
-                        navController.navigate(Screen.Payment.route)
+                if (!isLoggedIn) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.Home.route) { inclusive = false }
+                        }
                     }
-                )
+                } else {
+                    ProfileScreen(
+                        authViewModel = authViewModel,
+                        onNavigateToPurchaseHistory = {
+                            navController.navigate(Screen.PurchaseHistory.route)
+                        }
+                    )
+                }
+            }
+
+            composable(Screen.PurchaseHistory.route) {
+                if (!isLoggedIn) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.Home.route) { inclusive = false }
+                        }
+                    }
+                } else {
+                    PurchaseHistoryScreen(
+                        onBackClick = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
             }
         }
     }
