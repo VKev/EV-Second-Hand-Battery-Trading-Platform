@@ -57,6 +57,14 @@ dependencies {
     implementation(libs.androidx.compose.material.icons)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.compose.foundation.android)
+    implementation(libs.androidx.compose.foundation.android)
+    implementation(libs.androidx.compose.foundation.android)
+    implementation(libs.androidx.compose.foundation.android)
+    implementation(libs.androidx.compose.foundation.android)
+    implementation(libs.androidx.compose.foundation.android)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.foundation.layout)
     debugImplementation(libs.androidx.compose.ui.tooling)
     
     // Lifecycle

@@ -63,7 +63,8 @@ import java.util.Locale
 fun BatteryDetailScreen(
     batteryId: String,
     onBackClick: () -> Unit,
-    viewModel: BatteryDetailViewModel = viewModel()
+    viewModel: BatteryDetailViewModel = (viewModel()),
+    onPaymentDashboard: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val currentBattery = state.battery
@@ -103,7 +104,8 @@ fun BatteryDetailScreen(
                 currentBattery != null -> {
                     BatteryDetailContent(
                         battery = currentBattery,
-                        modifier = Modifier.navigationBarsPadding()
+                        modifier = Modifier.navigationBarsPadding(),
+                        onPaymentDashboard = onPaymentDashboard
                     )
                 }
 
@@ -121,7 +123,8 @@ fun BatteryDetailScreen(
 @Composable
 private fun BatteryDetailContent(
     battery: Battery,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onPaymentDashboard: () -> Unit
 ) {
     LazyColumn(
         modifier = modifier
@@ -170,7 +173,7 @@ private fun BatteryDetailContent(
         }
 
         item {
-            ActionButtonsRow()
+            ActionButtonsRow(onPaymentDashboard = onPaymentDashboard)
         }
     }
 }
@@ -463,13 +466,13 @@ private fun DescriptionSection(description: String) {
 }
 
 @Composable
-private fun ActionButtonsRow() {
+private fun ActionButtonsRow(onPaymentDashboard: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Button(
-            onClick = { /* TODO: Buy now action */ },
+            onClick = { onPaymentDashboard() },
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)

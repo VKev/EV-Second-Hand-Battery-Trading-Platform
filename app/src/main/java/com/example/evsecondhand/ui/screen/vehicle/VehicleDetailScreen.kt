@@ -63,7 +63,8 @@ import java.util.Locale
 fun VehicleDetailScreen(
     vehicleId: String,
     onBackClick: () -> Unit,
-    viewModel: VehicleDetailViewModel = viewModel()
+    viewModel: VehicleDetailViewModel = viewModel(),
+    onPaymentDashboard: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val currentVehicle = state.vehicle
@@ -103,6 +104,7 @@ fun VehicleDetailScreen(
                 currentVehicle != null -> {
                     VehicleDetailContent(
                         vehicle = currentVehicle,
+                        onPaymentDashboard = onPaymentDashboard,
                         modifier = Modifier.navigationBarsPadding()
                     )
                 }
@@ -121,7 +123,8 @@ fun VehicleDetailScreen(
 @Composable
 private fun VehicleDetailContent(
     vehicle: Vehicle,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onPaymentDashboard: () -> Unit
 ) {
     LazyColumn(
         modifier = modifier
@@ -170,7 +173,7 @@ private fun VehicleDetailContent(
         }
 
         item {
-            ActionButtonsRow()
+            ActionButtonsRow(onPaymentDashboard)
         }
     }
 }
@@ -487,13 +490,14 @@ private fun DescriptionSection(description: String) {
 }
 
 @Composable
-private fun ActionButtonsRow() {
+private fun ActionButtonsRow(onPaymentDashboard: () -> Unit) {
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Button(
-            onClick = { /* TODO: Buy now */ },
+            onClick = onPaymentDashboard,
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)

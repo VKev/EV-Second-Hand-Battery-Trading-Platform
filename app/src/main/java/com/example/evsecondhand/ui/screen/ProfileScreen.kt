@@ -16,7 +16,11 @@ import androidx.compose.ui.unit.sp
 import com.example.evsecondhand.ui.viewmodel.AuthViewModel
 
 @Composable
-fun ProfileScreen(authViewModel: AuthViewModel) {
+fun ProfileScreen(
+    authViewModel: AuthViewModel,
+    onSellerDashboardClick: () -> Unit,
+    onPaymentDashboard: () -> Unit
+) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -45,6 +49,15 @@ fun ProfileScreen(authViewModel: AuthViewModel) {
             
             Spacer(modifier = Modifier.height(16.dp))
             
+            Button(onClick = onSellerDashboardClick) {
+                Text("Quản lý tin")
+            }
+
+            Button(onClick = onPaymentDashboard) {
+                Text("Thanh toán")
+            }
+
+
             Button(onClick = { authViewModel.logout() }) {
                 Text("Đăng xuất")
             }

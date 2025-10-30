@@ -96,4 +96,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun resetState() {
         _authState.value = AuthState.Idle
     }
+
+    fun getAccessToken(): String? = repository.getAccessToken()
+
+    fun getCurrentUser(): User? = repository.getCurrentUser()
 }
