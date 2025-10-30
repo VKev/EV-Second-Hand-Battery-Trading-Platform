@@ -21,7 +21,9 @@ data class WalletState(
     val error: String? = null,
     val currentPage: Int = 1,
     val totalPages: Int = 1,
-    val totalTransactions: Int = 0
+    val totalTransactions: Int = 0,
+    val depositPayUrl: String? = null,
+    val showDepositDialog: Boolean = false
 )
 
 class WalletViewModel(application: Application) : AndroidViewModel(application) {
@@ -114,14 +116,47 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun depositFunds() {
-        // TODO: Implement deposit logic
-        Log.d(TAG, "Deposit funds clicked")
+    fun showDepositDialog() {
+        _state.value = _state.value.copy(showDepositDialog = true, error = null)
+    }
+    
+    fun hideDepositDialog() {
+        _state.value = _state.value.copy(showDepositDialog = false)
+    }
+    
+    fun depositFunds(amount: Int) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, error = null)
+            
+            val result = repository.depositFunds(amount)
+            
+            result.onSuccess { depositData ->
+                Log.d(TAG, "Deposit request successful")
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    depositPayUrl = depositData.payUrl,
+                    showDepositDialog = false
+                )
+            }.onFailure { exception ->
+                Log.e(TAG, "Deposit request failed", exception)
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = "Không thể tạo yêu cầu nạp tiền. Vui lòng thử lại."
+                )
+            }
+        }
+    }
+    
+    fun clearDepositPayUrl() {
+        _state.value = _state.value.copy(depositPayUrl = null)
     }
 
     fun withdrawFunds() {
-        // TODO: Implement withdraw logic
+        // TODO: Implement withdraw logic - Integration with bank transfer
         Log.d(TAG, "Withdraw funds clicked")
+        _state.value = _state.value.copy(
+            error = "Tính năng rút tiền đang được phát triển. Vui lòng thử lại sau."
+        )
     }
     
     fun refresh() {

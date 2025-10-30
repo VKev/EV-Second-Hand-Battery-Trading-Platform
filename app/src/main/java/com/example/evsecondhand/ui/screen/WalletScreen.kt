@@ -34,6 +34,7 @@ fun WalletScreen(
     viewModel: WalletViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
     val currencyFormatter = remember {
         NumberFormat.getInstance(Locale.US).apply {
             maximumFractionDigits = 0
@@ -41,6 +42,25 @@ fun WalletScreen(
     }
     val dateFormatter = remember {
         SimpleDateFormat("HH:mm dd/MM/yyyy", Locale.getDefault())
+    }
+    
+    // Handle opening MoMo payment URL
+    LaunchedEffect(state.depositPayUrl) {
+        state.depositPayUrl?.let { url ->
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+            context.startActivity(intent)
+            viewModel.clearDepositPayUrl()
+        }
+    }
+    
+    // Show deposit dialog
+    if (state.showDepositDialog) {
+        DepositDialog(
+            onDismiss = { viewModel.hideDepositDialog() },
+            onConfirm = { amount ->
+                viewModel.depositFunds(amount)
+            }
+        )
     }
 
     SwipeRefresh(
@@ -61,14 +81,14 @@ fun WalletScreen(
                     horizontalAlignment = Alignment.Start
                 ) {
                     Text(
-                        text = "Wallet Management",
+                        text = "Quản lý Ví",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Manage your funds for auctions and purchases\non EcoTrade EV",
+                        text = "Quản lý số dư cho đấu giá và mua sắm\ntrên EV Market",
                         fontSize = 14.sp,
                         color = TextSecondary,
                         lineHeight = 20.sp
@@ -113,7 +133,7 @@ fun WalletScreen(
                     lockedBalance = state.lockedBalance,
                     currencyFormatter = currencyFormatter,
                     isLoading = state.isLoading,
-                    onDeposit = { viewModel.depositFunds() },
+                    onDeposit = { viewModel.showDepositDialog() },
                     onWithdraw = { viewModel.withdrawFunds() }
                 )
             }
@@ -155,7 +175,7 @@ private fun BalanceCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Available Balance",
+                text = "Số dư khả dụng",
                 fontSize = 14.sp,
                 color = TextSecondary
             )
@@ -206,7 +226,7 @@ private fun BalanceCard(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = "Locked: ${currencyFormatter.format(lockedBalance)} đ",
+                            text = "Bị khóa: ${currencyFormatter.format(lockedBalance)} đ",
                             fontSize = 12.sp,
                             color = Color(0xFFE65100),
                             fontWeight = FontWeight.Medium
@@ -230,7 +250,13 @@ private fun BalanceCard(
                     shape = RoundedCornerShape(8.dp),
                     enabled = !isLoading
                 ) {
-                    Text("Deposit Funds", fontSize = 14.sp)
+                    Icon(
+                        imageVector = Icons.Default.AddCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Nạp tiền", fontSize = 14.sp)
                 }
 
                 Button(
@@ -242,7 +268,7 @@ private fun BalanceCard(
                     shape = RoundedCornerShape(8.dp),
                     enabled = !isLoading
                 ) {
-                    Text("Withdraw", fontSize = 14.sp)
+                    Text("Rút tiền", fontSize = 14.sp)
                 }
             }
         }
@@ -274,7 +300,7 @@ private fun TransactionHistoryCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Transaction History",
+                    text = "Lịch sử giao dịch",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -290,7 +316,7 @@ private fun TransactionHistoryCard(
                         tint = TextSecondary
                     )
                     Text(
-                        text = "All Transactions",
+                        text = "Tất cả giao dịch",
                         fontSize = 13.sp,
                         color = TextSecondary
                     )
@@ -339,7 +365,7 @@ private fun TransactionHistoryCard(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "No transactions yet",
+                                    text = "Chưa có giao dịch",
                                     color = TextSecondary,
                                     fontSize = 14.sp
                                 )
@@ -379,11 +405,11 @@ private fun TransactionTableHeader() {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TableHeaderCell("DATE", Modifier.width(160.dp))
-        TableHeaderCell("TYPE", Modifier.width(140.dp))
-        TableHeaderCell("DESCRIPTION", Modifier.width(300.dp))
-        TableHeaderCell("AMOUNT", Modifier.width(160.dp))
-        TableHeaderCell("STATUS", Modifier.width(120.dp))
+        TableHeaderCell("NGÀY", Modifier.width(160.dp))
+        TableHeaderCell("LOẠI", Modifier.width(140.dp))
+        TableHeaderCell("MÔ TẢ", Modifier.width(300.dp))
+        TableHeaderCell("SỐ TIỀN", Modifier.width(160.dp))
+        TableHeaderCell("TRẠNG THÁI", Modifier.width(120.dp))
     }
 }
 
@@ -498,7 +524,7 @@ private fun PaginationRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Showing 1 to $displayedCount\nof $totalTransactions transactions",
+            text = "Hiển thị 1 đến $displayedCount\ntrong tổng số $totalTransactions giao dịch",
             fontSize = 12.sp,
             color = TextSecondary,
             lineHeight = 16.sp
@@ -513,7 +539,7 @@ private fun PaginationRow(
                 enabled = currentPage > 1
             ) {
                 Text(
-                    text = "Previous",
+                    text = "Trước",
                     fontSize = 13.sp,
                     color = if (currentPage > 1) Color(0xFF2196F3) else TextSecondary
                 )
@@ -546,7 +572,7 @@ private fun PaginationRow(
                 enabled = currentPage < totalPages
             ) {
                 Text(
-                    text = "Next",
+                    text = "Sau",
                     fontSize = 13.sp,
                     color = if (currentPage < totalPages) Color(0xFF2196F3) else TextSecondary
                 )
@@ -557,11 +583,11 @@ private fun PaginationRow(
 
 // Helper functions
 private fun getTypeDisplayText(type: String): String = when (type.uppercase()) {
-    "DEPOSIT" -> "Deposit"
-    "WITHDRAWAL" -> "Withdraw"
-    "AUCTION_DEPOSIT" -> "Auction Deposit"
-    "AUCTION_BID" -> "Auction Bid"
-    "PURCHASE" -> "Purchase"
+    "DEPOSIT" -> "Nạp tiền"
+    "WITHDRAWAL" -> "Rút tiền"
+    "AUCTION_DEPOSIT" -> "Đặt cọc đấu giá"
+    "AUCTION_BID" -> "Đặt giá"
+    "PURCHASE" -> "Mua hàng"
     else -> type
 }
 
@@ -594,4 +620,175 @@ private fun parseTransactionDate(dateString: String): Date {
     } catch (e: Exception) {
         Date()
     }
+}
+
+@Composable
+private fun DepositDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit
+) {
+    var amount by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
+    
+    val quickAmounts = listOf(50000, 100000, 200000, 500000, 1000000)
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Nạp tiền vào ví",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Chọn số tiền hoặc nhập số tiền muốn nạp:",
+                    fontSize = 14.sp,
+                    color = TextSecondary
+                )
+                
+                // Quick amount buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    quickAmounts.take(3).forEach { quickAmount ->
+                        OutlinedButton(
+                            onClick = { 
+                                amount = quickAmount.toString()
+                                errorMessage = ""
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = if (amount == quickAmount.toString()) 
+                                    PrimaryGreen.copy(alpha = 0.1f) else Color.Transparent
+                            )
+                        ) {
+                            Text(
+                                text = "${quickAmount / 1000}K",
+                                fontSize = 12.sp,
+                                color = if (amount == quickAmount.toString()) 
+                                    PrimaryGreen else Color.Gray
+                            )
+                        }
+                    }
+                }
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    quickAmounts.drop(3).forEach { quickAmount ->
+                        OutlinedButton(
+                            onClick = { 
+                                amount = quickAmount.toString()
+                                errorMessage = ""
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = if (amount == quickAmount.toString()) 
+                                    PrimaryGreen.copy(alpha = 0.1f) else Color.Transparent
+                            )
+                        ) {
+                            Text(
+                                text = "${quickAmount / 1000}K",
+                                fontSize = 12.sp,
+                                color = if (amount == quickAmount.toString()) 
+                                    PrimaryGreen else Color.Gray
+                            )
+                        }
+                    }
+                    // Empty spacer for alignment
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+                
+                // Custom amount input
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { 
+                        if (it.isEmpty() || it.all { char -> char.isDigit() }) {
+                            amount = it
+                            errorMessage = ""
+                        }
+                    },
+                    label = { Text("Số tiền (đ)") },
+                    placeholder = { Text("Nhập số tiền") },
+                    isError = errorMessage.isNotEmpty(),
+                    supportingText = if (errorMessage.isNotEmpty()) {
+                        { Text(errorMessage, color = MaterialTheme.colorScheme.error) }
+                    } else null,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    trailingIcon = {
+                        Text(
+                            text = "đ",
+                            color = TextSecondary,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                    }
+                )
+                
+                // Info text
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = Color(0xFF2196F3),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "Thanh toán qua MoMo",
+                        fontSize = 12.sp,
+                        color = TextSecondary
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val amountInt = amount.toIntOrNull()
+                    when {
+                        amountInt == null || amountInt <= 0 -> {
+                            errorMessage = "Vui lòng nhập số tiền hợp lệ"
+                        }
+                        amountInt < 10000 -> {
+                            errorMessage = "Số tiền tối thiểu là 10.000đ"
+                        }
+                        amountInt > 50000000 -> {
+                            errorMessage = "Số tiền tối đa là 50.000.000đ"
+                        }
+                        else -> {
+                            onConfirm(amountInt)
+                        }
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryGreen
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Xác nhận")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Hủy")
+            }
+        },
+        shape = RoundedCornerShape(16.dp)
+    )
 }

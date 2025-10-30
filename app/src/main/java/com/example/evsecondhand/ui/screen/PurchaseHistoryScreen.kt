@@ -75,13 +75,13 @@ fun PurchaseHistoryScreen(
                     }
                     
                     Text(
-                        text = "Purchase History",
+                        text = "Lịch sử mua hàng",
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "View your purchase history and track your orders",
+                        text = "Xem lịch sử giao dịch và theo dõi đơn hàng của bạn",
                         fontSize = 14.sp,
                         color = TextSecondary,
                         lineHeight = 20.sp
@@ -194,12 +194,12 @@ private fun SummaryCard(
         ) {
             Column {
                 Text(
-                    text = "My Purchases",
+                    text = "Đơn hàng của tôi",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Showing page $currentPage of $totalPages",
+                    text = "Trang $currentPage / $totalPages",
                     fontSize = 12.sp,
                     color = TextSecondary,
                     modifier = Modifier.padding(top = 4.dp)
@@ -211,7 +211,7 @@ private fun SummaryCard(
                 color = PrimaryGreen.copy(alpha = 0.1f)
             ) {
                 Text(
-                    text = "$totalPurchases orders",
+                    text = "$totalPurchases đơn",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryGreen,
@@ -230,8 +230,8 @@ private fun PurchaseCard(
 ) {
     val imageUrl = purchase.vehicle?.images?.firstOrNull() 
         ?: purchase.battery?.images?.firstOrNull()
-    val title = purchase.vehicle?.title ?: purchase.battery?.title ?: "Unknown Product"
-    val productType = if (purchase.vehicle != null) "Vehicle" else "Battery"
+    val title = purchase.vehicle?.title ?: purchase.battery?.title ?: "Sản phẩm không xác định"
+    val productType = if (purchase.vehicle != null) "Xe điện" else "Pin"
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -251,7 +251,7 @@ private fun PurchaseCard(
             ) {
                 Column {
                     Text(
-                        text = "Order ID:",
+                        text = "Mã đơn:",
                         fontSize = 11.sp,
                         color = TextSecondary
                     )
@@ -327,7 +327,7 @@ private fun PurchaseCard(
                             text = productType,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
-                            color = if (productType == "Vehicle") Color(0xFF1976D2) else Color(0xFF2E7D32),
+                            color = if (productType == "Xe điện") Color(0xFF1976D2) else Color(0xFF2E7D32),
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                         )
                     }
@@ -362,7 +362,7 @@ private fun PurchaseCard(
                     )
                     Column {
                         Text(
-                            text = "Payment Method",
+                            text = "Phương thức thanh toán",
                             fontSize = 11.sp,
                             color = TextSecondary
                         )
@@ -388,7 +388,7 @@ private fun PurchaseCard(
                 )
                 Column {
                     Text(
-                        text = "Transaction Date",
+                        text = "Ngày giao dịch",
                         fontSize = 11.sp,
                         color = TextSecondary
                     )
@@ -415,7 +415,7 @@ private fun PurchaseCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Write Review",
+                        text = "Viết đánh giá",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -475,13 +475,13 @@ private fun EmptyPurchaseState() {
                 tint = TextSecondary.copy(alpha = 0.5f)
             )
             Text(
-                text = "No purchases yet",
+                text = "Chưa có đơn hàng",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextSecondary
             )
             Text(
-                text = "Your purchase history will appear here",
+                text = "Lịch sử mua hàng của bạn sẽ hiển thị tại đây",
                 fontSize = 14.sp,
                 color = TextSecondary,
                 textAlign = TextAlign.Center
@@ -514,7 +514,7 @@ private fun PaginationRow(
                 enabled = currentPage > 1
             ) {
                 Text(
-                    text = "Previous",
+                    text = "Trước",
                     fontSize = 14.sp,
                     color = if (currentPage > 1) Color(0xFF2196F3) else TextSecondary
                 )
@@ -552,7 +552,7 @@ private fun PaginationRow(
                 enabled = currentPage < totalPages
             ) {
                 Text(
-                    text = "Next",
+                    text = "Sau",
                     fontSize = 14.sp,
                     color = if (currentPage < totalPages) Color(0xFF2196F3) else TextSecondary
                 )

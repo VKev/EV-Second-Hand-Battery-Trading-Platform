@@ -16,13 +16,28 @@ object RetrofitClient {
         ignoreUnknownKeys = true
         coerceInputValues = true
         isLenient = true
+        prettyPrint = true
     }
     
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
     
+    // Add headers interceptor to match web app behavior
+    private val headersInterceptor = okhttp3.Interceptor { chain ->
+        val original = chain.request()
+        val requestBuilder = original.newBuilder()
+            .header("Accept", "application/json")
+            .header("Origin", "https://ev-market-0209.vercel.app")
+            .header("Referer", "https://ev-market-0209.vercel.app/")
+            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36")
+        
+        val request = requestBuilder.build()
+        chain.proceed(request)
+    }
+    
     private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(headersInterceptor)
         .addInterceptor(loggingInterceptor)
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
@@ -43,4 +58,5 @@ object RetrofitClient {
     val chatbotApi: ChatbotApiService = retrofit.create(ChatbotApiService::class.java)
     val walletApi: WalletApiService = retrofit.create(WalletApiService::class.java)
     val purchaseApi: PurchaseApiService = retrofit.create(PurchaseApiService::class.java)
+    val checkoutApi: CheckoutApiService = retrofit.create(CheckoutApiService::class.java)
 }

@@ -63,6 +63,7 @@ import java.util.Locale
 fun BatteryDetailScreen(
     batteryId: String,
     onBackClick: () -> Unit,
+    onBuyNow: (batteryId: String, batteryName: String, price: Int, image: String?) -> Unit,
     viewModel: BatteryDetailViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -103,6 +104,7 @@ fun BatteryDetailScreen(
                 currentBattery != null -> {
                     BatteryDetailContent(
                         battery = currentBattery,
+                        onBuyNow = onBuyNow,
                         modifier = Modifier.navigationBarsPadding()
                     )
                 }
@@ -121,6 +123,7 @@ fun BatteryDetailScreen(
 @Composable
 private fun BatteryDetailContent(
     battery: Battery,
+    onBuyNow: (batteryId: String, batteryName: String, price: Int, image: String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -170,7 +173,7 @@ private fun BatteryDetailContent(
         }
 
         item {
-            ActionButtonsRow()
+            ActionButtonsRow(battery = battery, onBuyNow = onBuyNow)
         }
     }
 }
@@ -463,16 +466,29 @@ private fun DescriptionSection(description: String) {
 }
 
 @Composable
-private fun ActionButtonsRow() {
+private fun ActionButtonsRow(
+    battery: Battery?,
+    onBuyNow: (batteryId: String, batteryName: String, price: Int, image: String?) -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Button(
-            onClick = { /* TODO: Buy now action */ },
+            onClick = {
+                battery?.let {
+                    onBuyNow(
+                        it.id,
+                        it.title,
+                        it.price,
+                        it.images.firstOrNull()
+                    )
+                }
+            },
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+            enabled = battery != null
         ) {
             Text(
                 text = "Mua ngay",
