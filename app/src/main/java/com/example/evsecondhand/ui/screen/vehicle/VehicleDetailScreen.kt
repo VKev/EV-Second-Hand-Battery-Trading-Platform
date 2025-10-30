@@ -63,6 +63,7 @@ import java.util.Locale
 fun VehicleDetailScreen(
     vehicleId: String,
     onBackClick: () -> Unit,
+    onBuyNow: (vehicleId: String, vehicleName: String, price: Int, image: String?) -> Unit,
     viewModel: VehicleDetailViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -103,6 +104,7 @@ fun VehicleDetailScreen(
                 currentVehicle != null -> {
                     VehicleDetailContent(
                         vehicle = currentVehicle,
+                        onBuyNow = onBuyNow,
                         modifier = Modifier.navigationBarsPadding()
                     )
                 }
@@ -121,6 +123,7 @@ fun VehicleDetailScreen(
 @Composable
 private fun VehicleDetailContent(
     vehicle: Vehicle,
+    onBuyNow: (vehicleId: String, vehicleName: String, price: Int, image: String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -170,7 +173,7 @@ private fun VehicleDetailContent(
         }
 
         item {
-            ActionButtonsRow()
+            ActionButtonsRow(vehicle = vehicle, onBuyNow = onBuyNow)
         }
     }
 }
@@ -487,16 +490,29 @@ private fun DescriptionSection(description: String) {
 }
 
 @Composable
-private fun ActionButtonsRow() {
+private fun ActionButtonsRow(
+    vehicle: Vehicle?,
+    onBuyNow: (vehicleId: String, vehicleName: String, price: Int, image: String?) -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Button(
-            onClick = { /* TODO: Buy now */ },
+            onClick = {
+                vehicle?.let {
+                    onBuyNow(
+                        it.id,
+                        it.title,
+                        it.price,
+                        it.images.firstOrNull()
+                    )
+                }
+            },
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+            enabled = vehicle != null
         ) {
             Text(
                 text = "Mua ngay",

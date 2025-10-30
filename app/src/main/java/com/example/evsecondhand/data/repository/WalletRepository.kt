@@ -57,4 +57,20 @@ class WalletRepository(
             Result.failure(e)
         }
     }
+    
+    suspend fun depositFunds(amount: Int): Result<com.example.evsecondhand.data.model.DepositData> {
+        return try {
+            val token = getBearerToken()
+            Log.d(TAG, "Requesting deposit - amount: $amount")
+            
+            val request = com.example.evsecondhand.data.model.DepositRequest(amount)
+            val response = walletApi.depositFunds(token, request)
+            Log.d(TAG, "Deposit request successful - payUrl: ${response.data.payUrl}")
+            
+            Result.success(response.data)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error requesting deposit", e)
+            Result.failure(e)
+        }
+    }
 }

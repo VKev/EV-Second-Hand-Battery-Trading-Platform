@@ -27,6 +27,8 @@ import com.example.evsecondhand.ui.screen.auth.LoginScreen
 import com.example.evsecondhand.ui.screen.auth.RegisterScreen
 import com.example.evsecondhand.ui.screen.home.HomeScreen
 import com.example.evsecondhand.ui.screen.vehicle.VehicleDetailScreen
+import com.example.evsecondhand.ui.screen.checkout.CheckoutSuccessScreen
+import com.example.evsecondhand.ui.screen.checkout.CheckoutFailureScreen
 import com.example.evsecondhand.ui.theme.PrimaryGreen
 import com.example.evsecondhand.ui.viewmodel.AuthViewModel
 import com.example.evsecondhand.ui.viewmodel.HomeViewModel
@@ -115,7 +117,18 @@ fun AppNavigation(
                 } else {
                     BatteryDetailScreen(
                         batteryId = batteryId,
-                        onBackClick = { navController.popBackStack() }
+                        onBackClick = { navController.popBackStack() },
+                        onBuyNow = { id, name, price, image ->
+                            navController.navigate(
+                                Screen.Checkout.createRoute(
+                                    listingId = id,
+                                    listingType = "BATTERY",
+                                    listingName = name,
+                                    listingPrice = price,
+                                    listingImage = image
+                                )
+                            )
+                        }
                     )
                 }
             }
@@ -130,7 +143,18 @@ fun AppNavigation(
                 } else {
                     VehicleDetailScreen(
                         vehicleId = vehicleId,
-                        onBackClick = { navController.popBackStack() }
+                        onBackClick = { navController.popBackStack() },
+                        onBuyNow = { id, name, price, image ->
+                            navController.navigate(
+                                Screen.Checkout.createRoute(
+                                    listingId = id,
+                                    listingType = "VEHICLE",
+                                    listingName = name,
+                                    listingPrice = price,
+                                    listingImage = image
+                                )
+                            )
+                        }
                     )
                 }
             }
@@ -171,7 +195,164 @@ fun AppNavigation(
                         }
                     }
                 } else {
-                    ProfileScreen(authViewModel = authViewModel)
+                    ProfileScreen(
+                        authViewModel = authViewModel,
+                        onNavigateToPurchaseHistory = {
+                            navController.navigate(Screen.PurchaseHistory.route)
+                        }
+                    )
+                }
+            }
+            
+            composable(
+                route = Screen.Checkout.route,
+                arguments = listOf(
+                    navArgument("listingId") { type = NavType.StringType },
+                    navArgument("listingType") { type = NavType.StringType },
+                    navArgument("listingName") { type = NavType.StringType },
+                    navArgument("listingPrice") { type = NavType.IntType },
+                    navArgument("listingImage") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val listingId = backStackEntry.arguments?.getString("listingId") ?: ""
+                val listingType = backStackEntry.arguments?.getString("listingType") ?: ""
+                val listingName = java.net.URLDecoder.decode(
+                    backStackEntry.arguments?.getString("listingName") ?: "", 
+                    "UTF-8"
+                )
+                val listingPrice = backStackEntry.arguments?.getInt("listingPrice") ?: 0
+                val listingImage = backStackEntry.arguments?.getString("listingImage")
+                    ?.let { 
+                        val decoded = java.net.URLDecoder.decode(it, "UTF-8")
+                        if (decoded == "null") null else decoded
+                    }
+                
+                if (!isLoggedIn) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.Home.route) { inclusive = false }
+                        }
+                    }
+                } else {
+                    com.example.evsecondhand.ui.screen.checkout.CheckoutScreen(
+                        listingId = listingId,
+                        listingType = listingType,
+                        listingName = listingName,
+                        listingPrice = listingPrice,
+                        listingImage = listingImage,
+                        onNavigateToWallet = {
+                            navController.navigate(Screen.Wallet.route) {
+                                popUpTo(Screen.Checkout.route) { inclusive = true }
+                            }
+                        },
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        },
+                        onCheckoutSuccess = { transactionId, productName, amount, paymentMethod ->
+                            android.util.Log.d("AppNavigation", "onCheckoutSuccess triggered: txId=$transactionId, name=$productName, amount=$amount, method=$paymentMethod")
+                            val route = Screen.CheckoutSuccess.createRoute(
+                                transactionId = transactionId,
+                                listingName = productName,
+                                amount = amount,
+                                paymentMethod = paymentMethod
+                            )
+                            android.util.Log.d("AppNavigation", "Navigating to: $route")
+                            navController.navigate(route) {
+                                popUpTo(Screen.Checkout.route) { inclusive = true }
+                            }
+                            android.util.Log.d("AppNavigation", "Navigation command executed")
+                        }
+                    )
+                }
+            }
+            
+            composable(
+                route = Screen.CheckoutSuccess.route,
+                arguments = listOf(
+                    navArgument("transactionId") { type = NavType.StringType },
+                    navArgument("listingName") { type = NavType.StringType },
+                    navArgument("amount") { type = NavType.IntType },
+                    navArgument("paymentMethod") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val transactionId = backStackEntry.arguments?.getString("transactionId") ?: ""
+                val listingName = java.net.URLDecoder.decode(
+                    backStackEntry.arguments?.getString("listingName") ?: "", 
+                    "UTF-8"
+                )
+                val amount = backStackEntry.arguments?.getInt("amount") ?: 0
+                val paymentMethod = backStackEntry.arguments?.getString("paymentMethod") ?: ""
+                
+                CheckoutSuccessScreen(
+                    transactionId = transactionId,
+                    listingName = listingName,
+                    amount = amount,
+                    paymentMethod = paymentMethod,
+                    onNavigateToHistory = {
+                        navController.navigate(Screen.PurchaseHistory.route) {
+                            popUpTo(Screen.Home.route) { inclusive = false }
+                        }
+                    },
+                    onNavigateToHome = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Home.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+            
+            composable(
+                route = Screen.CheckoutFailure.route,
+                arguments = listOf(
+                    navArgument("transactionId") { type = NavType.StringType },
+                    navArgument("listingName") { type = NavType.StringType },
+                    navArgument("amount") { type = NavType.IntType },
+                    navArgument("paymentMethod") { type = NavType.StringType },
+                    navArgument("errorMessage") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val transactionId = backStackEntry.arguments?.getString("transactionId") ?: ""
+                val listingName = java.net.URLDecoder.decode(
+                    backStackEntry.arguments?.getString("listingName") ?: "", 
+                    "UTF-8"
+                )
+                val amount = backStackEntry.arguments?.getInt("amount") ?: 0
+                val paymentMethod = backStackEntry.arguments?.getString("paymentMethod") ?: ""
+                val errorMessage = java.net.URLDecoder.decode(
+                    backStackEntry.arguments?.getString("errorMessage") ?: "", 
+                    "UTF-8"
+                )
+                
+                CheckoutFailureScreen(
+                    transactionId = transactionId,
+                    productName = listingName,
+                    amount = amount,
+                    paymentMethod = paymentMethod,
+                    errorMessage = errorMessage,
+                    onNavigateToHome = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Home.route) { inclusive = true }
+                        }
+                    },
+                    onRetryCheckout = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            
+            composable(Screen.PurchaseHistory.route) {
+                if (!isLoggedIn) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.Home.route) { inclusive = false }
+                        }
+                    }
+                } else {
+                    PurchaseHistoryScreen(
+                        onBackClick = {
+                            navController.popBackStack()
+                        }
+                    )
                 }
             }
         }

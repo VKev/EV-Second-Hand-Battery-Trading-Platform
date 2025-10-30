@@ -72,8 +72,8 @@ fun ProfileScreen(
                 // Purchase History
                 ProfileMenuItem(
                     icon = Icons.Default.ShoppingBag,
-                    title = "Purchase History",
-                    subtitle = "View your purchase history",
+                    title = "Lịch sử mua hàng",
+                    subtitle = "Xem lịch sử giao dịch của bạn",
                     onClick = onNavigateToPurchaseHistory
                 )
 
@@ -82,8 +82,8 @@ fun ProfileScreen(
                 // Settings (placeholder)
                 ProfileMenuItem(
                     icon = Icons.Default.Settings,
-                    title = "Settings",
-                    subtitle = "App preferences and settings",
+                    title = "Cài đặt",
+                    subtitle = "Tùy chỉnh ứng dụng",
                     onClick = { /* TODO */ }
                 )
 
@@ -92,8 +92,8 @@ fun ProfileScreen(
                 // Help (placeholder)
                 ProfileMenuItem(
                     icon = Icons.Default.Help,
-                    title = "Help & Support",
-                    subtitle = "Get help and contact support",
+                    title = "Trợ giúp & Hỗ trợ",
+                    subtitle = "Nhận trợ giúp và liên hệ hỗ trợ",
                     onClick = { /* TODO */ }
                 )
             }

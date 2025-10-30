@@ -62,3 +62,30 @@ enum class TransactionStatus {
     PENDING,
     CANCELLED
 }
+
+// Deposit Models
+@Serializable
+data class DepositRequest(
+    val amount: Int
+)
+
+@Serializable
+data class DepositResponse(
+    val message: String,
+    val data: DepositData
+)
+
+@Serializable
+data class DepositData(
+    val partnerCode: String,
+    val orderId: String,
+    val requestId: String,
+    val amount: Int,
+    val responseTime: Long,
+    val message: String,
+    val resultCode: Int,
+    val payUrl: String,
+    val deeplink: String,
+    val qrCodeUrl: String,
+    val deeplinkMiniApp: String
+)

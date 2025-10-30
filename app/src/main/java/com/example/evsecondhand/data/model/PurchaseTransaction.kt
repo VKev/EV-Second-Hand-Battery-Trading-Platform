@@ -26,12 +26,19 @@ data class PurchaseTransaction(
     val batteryId: String? = null,
     val finalPrice: Double,
     val paymentGateway: String, // WALLET, MOMO, etc.
-    val paymentDetail: String? = null,
+    val paymentDetail: PaymentDetailInfo? = null, // Can be object for MoMo or null for WALLET
     val createdAt: String,
     val updatedAt: String,
     val vehicle: PurchaseVehicle? = null,
     val battery: PurchaseBattery? = null,
     val review: PurchaseReview? = null
+)
+
+@Serializable
+data class PaymentDetailInfo(
+    val amount: Int? = null,
+    val payUrl: String? = null,
+    val gateway: String? = null
 )
 
 @Serializable
@@ -61,3 +68,9 @@ enum class PurchaseStatus {
     CANCELLED,
     PROCESSING
 }
+
+@Serializable
+data class TransactionStatusResponse(
+    val message: String,
+    val data: PurchaseTransaction
+)
