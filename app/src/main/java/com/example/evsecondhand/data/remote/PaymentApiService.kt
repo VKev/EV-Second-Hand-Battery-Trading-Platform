@@ -12,7 +12,8 @@ import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 
-interface CheckoutApiService {
+// Backwards-compatible PaymentApiService wrapper — uses the consolidated Checkout/Wallet models.
+interface PaymentApiService {
 
     @GET("wallet/")
     suspend fun getWalletBalance(

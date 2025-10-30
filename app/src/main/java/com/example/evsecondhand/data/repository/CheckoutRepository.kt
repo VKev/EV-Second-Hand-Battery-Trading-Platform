@@ -6,9 +6,11 @@ import android.util.Log
 import com.example.evsecondhand.data.model.CheckoutData
 import com.example.evsecondhand.data.model.CheckoutRequest
 import com.example.evsecondhand.data.model.CheckoutResponse
+import com.example.evsecondhand.data.model.PurchaseTransaction
 import com.example.evsecondhand.data.model.WalletBalance
 import com.example.evsecondhand.data.remote.CheckoutApiService
 import com.example.evsecondhand.data.remote.WalletApiService
+
 
 class CheckoutRepository(
     private val checkoutApi: CheckoutApiService,
@@ -24,13 +26,11 @@ class CheckoutRepository(
     private val prefs: SharedPreferences = 
         context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
     
-    private fun getAccessToken(): String? {
-        return prefs.getString("access_token", null)
-    }
-    
+    private fun getAccessToken(): String? = prefs.getString("access_token", null)
+
     private fun getBearerToken(): String {
         val token = getAccessToken()
-        return "Bearer $token"
+        return token ?: throw IllegalStateException("No access token in preferences")
     }
     
     suspend fun checkout(
@@ -46,20 +46,24 @@ class CheckoutRepository(
                 listingType = listingType,
                 paymentMethod = paymentMethod
             )
-            val response = checkoutApi.checkout(token, request)
+            val response = checkoutApi.checkout("Bearer $token", request)
             Log.d(TAG, "Checkout successful - transactionId: ${response.data.transactionId}")
             
             // For WALLET payment, need to confirm payment
             if (paymentMethod == "WALLET") {
                 Log.d(TAG, "WALLET payment - confirming with pay-with-wallet API")
-                val walletResponse = checkoutApi.payWithWallet(token, response.data.transactionId)
-                Log.d(TAG, "Payment confirmed - status: ${walletResponse.data.status}")
-                
-                // Convert TransactionStatusResponse back to CheckoutResponse format
+                // Trigger pay-with-wallet on backend
+                checkoutApi.payWithWallet("Bearer $token", response.data.transactionId)
+
+                // After triggering, fetch transaction status from Purchase API
+                val txStatusResponse = purchaseApi.getTransactionStatus("Bearer $token", response.data.transactionId)
+                val tx: PurchaseTransaction = txStatusResponse.data
+                Log.d(TAG, "Payment confirmed - status: ${tx.status}")
+
                 val finalResponse = CheckoutResponse(
-                    message = walletResponse.message,
+                    message = txStatusResponse.message,
                     data = CheckoutData(
-                        transactionId = walletResponse.data.id,
+                        transactionId = tx.id,
                         paymentInfo = null,
                         paymentDetail = null
                     )
@@ -78,7 +82,7 @@ class CheckoutRepository(
         return try {
             val token = getBearerToken()
             Log.d(TAG, "Fetching wallet balance")
-            val response = walletApi.getWalletBalance(token)
+            val response = walletApi.getWalletBalance("Bearer $token")
             Log.d(TAG, "Wallet balance: ${response.data.availableBalance}")
             Result.success(response.data)
         } catch (e: Exception) {
