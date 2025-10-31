@@ -470,6 +470,10 @@ private fun ActionButtonsRow(
     battery: Battery?,
     onBuyNow: (batteryId: String, batteryName: String, price: Int, image: String?) -> Unit
 ) {
+    val isAuctionItem = battery?.isAuction == true ||
+        battery?.status?.contains("AUCTION", ignoreCase = true) == true
+    val primaryActionLabel = if (isAuctionItem) "dau gia" else "mua ngay"
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -491,7 +495,7 @@ private fun ActionButtonsRow(
             enabled = battery != null
         ) {
             Text(
-                text = "Mua ngay",
+                text = primaryActionLabel,
                 style = MaterialTheme.typography.labelLarge.copy(
                     color = Color.White,
                     fontWeight = FontWeight.Bold

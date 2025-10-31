@@ -494,6 +494,10 @@ private fun ActionButtonsRow(
     vehicle: Vehicle?,
     onBuyNow: (vehicleId: String, vehicleName: String, price: Int, image: String?) -> Unit
 ) {
+    val isAuctionItem = vehicle?.isAuction == true ||
+        vehicle?.status?.contains("AUCTION", ignoreCase = true) == true
+    val primaryActionLabel = if (isAuctionItem) "dau gia" else "mua ngay"
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -515,7 +519,7 @@ private fun ActionButtonsRow(
             enabled = vehicle != null
         ) {
             Text(
-                text = "Mua ngay",
+                text = primaryActionLabel,
                 style = MaterialTheme.typography.labelLarge.copy(
                     color = Color.White,
                     fontWeight = FontWeight.Bold
