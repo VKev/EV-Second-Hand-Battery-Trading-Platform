@@ -58,6 +58,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -67,6 +68,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.evsecondhand.data.remote.RetrofitClient
 import com.example.evsecondhand.ui.theme.PrimaryGreen
 import com.example.evsecondhand.ui.theme.PrimaryGreenDark
 import com.example.evsecondhand.ui.viewmodel.AuthState
@@ -85,6 +87,7 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
+    val uriHandler = LocalUriHandler.current
 
     val authState by authViewModel.authState.collectAsState()
     val context = LocalContext.current
@@ -306,7 +309,8 @@ fun LoginScreen(
 
                     OutlinedButton(
                         onClick = {
-                            googleSignInLauncher.launch(authViewModel.getGoogleSignInIntent())
+                            val googleAuthUrl = RetrofitClient.BASE_URL + "auth/google"
+                            uriHandler.openUri(googleAuthUrl)
                         },
                         modifier = Modifier
                             .fillMaxWidth()

@@ -112,6 +112,22 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun exchangeAuthCodeForToken(code: String) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            val result = repository.exchangeAuthCodeForToken(code)
+            result.onSuccess { response ->
+                _isLoggedIn.value = true
+                _authState.value = AuthState.Success(response.data.user)
+            }.onFailure { exception ->
+                Log.e(TAG, "Auth code exchange failed", exception)
+                _authState.value = AuthState.Error(
+                    exception.message ?: "Authentication failed. Please try again."
+                )
+            }
+        }
+    }
+
     fun logout() {
         viewModelScope.launch {
             try {

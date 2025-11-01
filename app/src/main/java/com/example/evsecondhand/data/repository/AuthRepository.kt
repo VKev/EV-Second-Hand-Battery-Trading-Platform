@@ -8,6 +8,7 @@ import com.example.evsecondhand.data.model.LoginRequest
 import com.example.evsecondhand.data.model.RegisterRequest
 import com.example.evsecondhand.data.model.User
 import com.example.evsecondhand.data.remote.AuthApiService
+import com.example.evsecondhand.data.model.ExchangeCodeRequest
 import com.example.evsecondhand.data.remote.RetrofitClient
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -64,6 +65,19 @@ class AuthRepository(
             saveAuthData(response.data.accessToken, response.data.user)
             Result.success(response)
         } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun exchangeAuthCodeForToken(code: String): Result<AuthResponse> {
+        return try {
+            Log.d(TAG, "Exchanging auth code for token")
+            val request = ExchangeCodeRequest(code = code)
+            val response = authApi.exchangeCodeForToken(request)
+            saveAuthData(response.data.accessToken, response.data.user)
+            Result.success(response)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to exchange code for token", e)
             Result.failure(e)
         }
     }

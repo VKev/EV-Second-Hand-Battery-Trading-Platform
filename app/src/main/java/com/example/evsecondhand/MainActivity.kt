@@ -47,7 +47,25 @@ class MainActivity : ComponentActivity() {
     
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        handleAuthDeepLink(intent)
         handleZaloPayDeepLink(intent)
+    }
+
+    private fun handleAuthDeepLink(intent: Intent?) {
+        val action = intent?.action
+        val data: Uri? = intent?.data
+
+        if (Intent.ACTION_VIEW == action && data != null) {
+            if (data.scheme == "evmarket" && data.host == "auth-callback") {
+                val code = data.getQueryParameter("code")
+                if (!code.isNullOrBlank()) {
+                    Log.d(TAG, "Received auth code from backend: $code")
+                    authViewModel.exchangeAuthCodeForToken(code)
+                } else {
+                    Log.w(TAG, "Auth callback received but code is missing.")
+                }
+            }
+        }
     }
     
     private fun handleZaloPayDeepLink(intent: Intent?) {
