@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -10,7 +11,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.evsecondhand"
+        applicationId = "com.example.khanghvse184160"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -87,10 +88,14 @@ dependencies {
     
     // Accompanist
     implementation(libs.accompanist.swiperefresh)
-    
-    // Browser for OAuth
-    implementation(libs.androidx.browser)
-    
+
+    // Firebase / Google Sign-In
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.database)
+    implementation(libs.play.services.auth)
+    implementation(libs.kotlinx.coroutines.play.services)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

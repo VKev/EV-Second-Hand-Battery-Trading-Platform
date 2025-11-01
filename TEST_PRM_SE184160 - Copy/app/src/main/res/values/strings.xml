@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">testse184160</string>
+    <string name="default_web_client_id">848269231721-8mnbpb8km0r9i1jiipgvjth9r83e2qnr.apps.googleusercontent.com</string>
+    <string name="google_sign_in_button_text">Continue with Google</string>
+    <string name="content_desc_voice_input_email">Speak email</string>
+    <string name="content_desc_voice_input_password">Speak password</string>
+    <string name="prompt_voice_input">Please say the text</string>
+</resources>

@@ -16,7 +16,7 @@
         android:theme="@style/Theme.EVSecondHand"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".MainActivity"
+            android:name="com.example.evsecondhand.MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize">
@@ -24,31 +24,6 @@
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            
-            <!-- OAuth callback intent filter -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                
-                <!-- Deep link scheme for OAuth callback (Custom scheme) -->
-                <data
-                    android:scheme="evmarket"
-                    android:host="oauth" />
-            </intent-filter>
-            
-            <!-- Alternative OAuth callback with HTTPS (App Links) -->
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                
-                <!-- HTTPS scheme for OAuth callback -->
-                <data
-                    android:scheme="https"
-                    android:host="evmarket.app"
-                    android:pathPrefix="/oauth/callback" />
             </intent-filter>
         </activity>
     </application>

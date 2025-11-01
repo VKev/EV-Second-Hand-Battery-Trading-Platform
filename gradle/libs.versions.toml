@@ -24,6 +24,10 @@ foundationAndroid = "1.8.1"
 foundation = "1.9.4"
 foundationLayout = "1.9.4"
 browser = "1.8.0"
+firebaseBom = "33.5.1"
+playServicesAuth = "21.3.0"
+coroutinesPlayServices = "1.9.0"
+googleServices = "4.4.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -73,10 +77,18 @@ androidx-compose-foundation-layout = { group = "androidx.compose.foundation", na
 # Browser
 androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 
+# Firebase / Google Sign-In
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-auth = { module = "com.google.firebase:firebase-auth-ktx" }
+firebase-database = { module = "com.google.firebase:firebase-database-ktx" }
+play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutinesPlayServices" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 
 
