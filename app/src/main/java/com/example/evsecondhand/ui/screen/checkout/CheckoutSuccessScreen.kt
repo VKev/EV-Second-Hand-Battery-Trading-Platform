@@ -164,7 +164,7 @@ fun CheckoutSuccessScreen(
                         label = "Phương thức",
                         value = when (paymentMethod) {
                             "WALLET" -> "Ví EV Market"
-                            "MOMO" -> "Ví MoMo"
+                            "ZALOPAY" -> "Ví ZaloPay"
                             else -> paymentMethod
                         }
                     )

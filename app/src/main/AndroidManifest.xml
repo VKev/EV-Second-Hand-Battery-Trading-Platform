@@ -5,6 +5,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- Query for ZaloPay app -->
+    <queries>
+        <package android:name="com.vng.zalopay" />
+    </queries>
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -16,7 +21,7 @@
         android:theme="@style/Theme.EVSecondHand"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".MainActivity"
+            android:name="com.example.evsecondhand.MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize">
@@ -26,29 +31,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             
-            <!-- OAuth callback intent filter -->
+            <!-- Deep link for ZaloPay callback -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                
-                <!-- Deep link scheme for OAuth callback (Custom scheme) -->
                 <data
                     android:scheme="evmarket"
-                    android:host="oauth" />
-            </intent-filter>
-            
-            <!-- Alternative OAuth callback with HTTPS (App Links) -->
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                
-                <!-- HTTPS scheme for OAuth callback -->
-                <data
-                    android:scheme="https"
-                    android:host="evmarket.app"
-                    android:pathPrefix="/oauth/callback" />
+                    android:host="app" />
             </intent-filter>
         </activity>
     </application>

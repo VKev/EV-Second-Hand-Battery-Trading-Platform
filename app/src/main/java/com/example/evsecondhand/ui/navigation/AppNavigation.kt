@@ -137,7 +137,15 @@ fun AppNavigation(
                     BatteryDetailScreen(
                         batteryId = batteryId,
                         onBackClick = { navController.popBackStack() },
-                        onBidClick = { navController.navigate(Screen.Auctions.route) }
+                        onBidClick = { navController.navigate(Screen.Auctions.route) },
+                        onPaymentDashboard = { battery ->
+                            navController.navigate(
+                                Screen.Payment.createRoute(
+                                    itemType = "battery",
+                                    itemId = battery.id
+                                )
+                            )
+                        }
                     )
                 }
             }
@@ -153,7 +161,17 @@ fun AppNavigation(
                     VehicleDetailScreen(
                         vehicleId = vehicleId,
                         onBackClick = { navController.popBackStack() },
-                        onBidClick = { navController.navigate(Screen.VehicleAuction.createRoute(vehicleId)) }
+                        onBidClick = {
+                            navController.navigate(Screen.VehicleAuction.createRoute(vehicleId))
+                        },
+                        onPaymentDashboard = { vehicle ->
+                            navController.navigate(
+                                Screen.Payment.createRoute(
+                                    itemType = "vehicle",
+                                    itemId = vehicle.id
+                                )
+                            )
+                        }
                     )
                 }
             }

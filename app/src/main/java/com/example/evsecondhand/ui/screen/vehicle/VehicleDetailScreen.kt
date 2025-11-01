@@ -1,4 +1,4 @@
-﻿package com.example.evsecondhand.ui.screen.vehicle
+package com.example.evsecondhand.ui.screen.vehicle
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -34,6 +34,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -81,6 +82,7 @@ fun VehicleDetailScreen(
     vehicleId: String,
     onBackClick: () -> Unit,
     onBidClick: (String) -> Unit,
+    onPaymentDashboard: (Vehicle) -> Unit = {},
     viewModel: VehicleDetailViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -134,7 +136,8 @@ fun VehicleDetailScreen(
                         state = state,
                         modifier = Modifier.navigationBarsPadding(),
                         onDepositClick = { viewModel.placeDeposit() },
-                        onBidClick = { onBidClick(currentVehicle.id) }
+                        onBidClick = { onBidClick(currentVehicle.id) },
+                        onPaymentDashboard = onPaymentDashboard
                     )
                 }
 
@@ -155,7 +158,8 @@ private fun VehicleDetailContent(
     state: VehicleDetailState,
     modifier: Modifier = Modifier,
     onDepositClick: () -> Unit,
-    onBidClick: () -> Unit
+    onBidClick: () -> Unit,
+    onPaymentDashboard: (Vehicle) -> Unit
 ) {
     LazyColumn(
         modifier = modifier
@@ -220,6 +224,10 @@ private fun VehicleDetailContent(
         }
 
         item {
+            ActionButtonsRow(
+                vehicle = vehicle,
+                onPaymentDashboard = onPaymentDashboard
+            )
             Spacer(modifier = Modifier.height(12.dp))
         }
     }
@@ -919,7 +927,51 @@ private fun DescriptionSection(description: String) {
         ) {
             Text(
                 text = description,
-                style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary)
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextSecondary
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionButtonsRow(
+    vehicle: Vehicle?,
+    onPaymentDashboard: (Vehicle) -> Unit
+) {
+    val isAuctionItem = vehicle?.isAuction == true ||
+        vehicle?.status?.contains("AUCTION", ignoreCase = true) == true
+    val primaryActionLabel = if (isAuctionItem) "Dau gia" else "Mua ngay"
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Button(
+            onClick = {
+                vehicle?.let { onPaymentDashboard(it) }
+            },
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
+        ) {
+            Text(
+                text = primaryActionLabel,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            )
+        }
+        OutlinedButton(
+            onClick = { /* TODO: Compare */ },
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryGreen)
+        ) {
+            Text(
+                text = "Them so sanh",
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
             )
         }
     }

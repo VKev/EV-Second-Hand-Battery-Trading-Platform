@@ -1,5 +1,6 @@
 package com.example.evsecondhand.ui.screen
 
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -19,11 +20,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.evsecondhand.data.model.Transaction
+import com.example.evsecondhand.data.zalopay.ZaloPaySDKHelper
 import com.example.evsecondhand.ui.theme.PrimaryGreen
 import com.example.evsecondhand.ui.theme.TextSecondary
 import com.example.evsecondhand.ui.viewmodel.WalletViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -35,6 +41,8 @@ fun WalletScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     val currencyFormatter = remember {
         NumberFormat.getInstance(Locale.US).apply {
             maximumFractionDigits = 0
@@ -44,12 +52,59 @@ fun WalletScreen(
         SimpleDateFormat("HH:mm dd/MM/yyyy", Locale.getDefault())
     }
     
-    // Handle opening MoMo payment URL
-    LaunchedEffect(state.depositPayUrl) {
-        state.depositPayUrl?.let { url ->
-            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
-            context.startActivity(intent)
-            viewModel.clearDepositPayUrl()
+    // Handle opening ZaloPay payment using SDK - App to App directly
+    LaunchedEffect(state.zpTransToken) {
+        state.zpTransToken?.let { token ->
+            android.util.Log.d("WalletScreen", "Opening ZaloPay with token: $token")
+            
+            // Use ZaloPay SDK to open the app directly (not browser)
+            val activity = context as? ComponentActivity
+            if (activity != null) {
+                ZaloPaySDKHelper.payWithZaloPay(
+                    activity = activity,
+                    zpTransToken = token,
+                    onPaymentResult = { resultCode, message ->
+                        android.util.Log.d("WalletScreen", "Payment result: code=$resultCode, message=$message")
+                        
+                        CoroutineScope(Dispatchers.Main).launch {
+                            when (resultCode) {
+                                1 -> {
+                                    // Payment success
+                                    snackbarHostState.showSnackbar(
+                                        message = "✅ Thanh toán thành công! Đang cập nhật số dư...",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                    // Wait 2 seconds for backend to process the payment
+                                    delay(2000)
+                                    // Refresh wallet balance
+                                    viewModel.refresh()
+                                    snackbarHostState.showSnackbar(
+                                        message = "💰 Số dư ví đã được cập nhật!",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                }
+                                4 -> {
+                                    // Payment canceled
+                                    snackbarHostState.showSnackbar(
+                                        message = "❌ Thanh toán đã bị hủy",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                }
+                                else -> {
+                                    // Payment error
+                                    snackbarHostState.showSnackbar(
+                                        message = "⚠️ Lỗi thanh toán: $message",
+                                        duration = SnackbarDuration.Long
+                                    )
+                                }
+                            }
+                        }
+                    }
+                )
+                viewModel.clearDepositPayUrl()
+            } else {
+                android.util.Log.e("WalletScreen", "Context is not ComponentActivity")
+            }
         }
     }
     
@@ -63,18 +118,22 @@ fun WalletScreen(
         )
     }
 
-    SwipeRefresh(
-        state = rememberSwipeRefreshState(isRefreshing = state.isLoading),
-        onRefresh = { viewModel.refresh() }
-    ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF5F5F5)),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        SwipeRefresh(
+            state = rememberSwipeRefreshState(isRefreshing = state.isLoading),
+            onRefresh = { viewModel.refresh() },
+            modifier = Modifier.padding(paddingValues)
         ) {
-            // Header
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF5F5F5)),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Header
             item {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -152,6 +211,7 @@ fun WalletScreen(
                 )
             }
         }
+    }
     }
 }
 
@@ -747,7 +807,7 @@ private fun DepositDialog(
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = "Thanh toán qua MoMo",
+                        text = "Thanh toán qua ZaloPay",
                         fontSize = 12.sp,
                         color = TextSecondary
                     )

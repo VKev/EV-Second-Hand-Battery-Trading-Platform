@@ -36,10 +36,10 @@ enum class PaymentItemType {
 
 enum class CheckoutPaymentMethod(val apiValue: String) {
     WALLET("WALLET"),
-    MOMO("MOMO")
+    ZALOPAY("ZALOPAY")
 }
 
-data class PendingMomoPayment(
+data class PendingZaloPayPayment(
     val transactionId: String,
     val paymentInfo: CheckoutPaymentInfo
 )
@@ -64,7 +64,7 @@ data class PaymentUiState(
     val productError: String? = null,
     val isCheckoutProcessing: Boolean = false,
     val checkoutSuccessMessage: String? = null,
-    val pendingMomoPayment: PendingMomoPayment? = null,
+    val pendingZaloPayPayment: PendingZaloPayPayment? = null,
     val navigateToHome: Boolean = false
 )
 
@@ -199,7 +199,7 @@ class PaymentViewModel(
                 isCheckoutProcessing = true,
                 errorMessage = null,
                 checkoutSuccessMessage = null,
-                pendingMomoPayment = null,
+                pendingZaloPayPayment = null,
                 navigateToHome = false
             )
 
@@ -212,11 +212,11 @@ class PaymentViewModel(
                 val paymentInfo = checkoutData?.paymentInfo
 
                 when (method) {
-                    CheckoutPaymentMethod.MOMO -> {
+                    CheckoutPaymentMethod.ZALOPAY -> {
                         if (checkoutData != null && paymentInfo != null) {
                             _uiState.value = _uiState.value.copy(
                                 isCheckoutProcessing = false,
-                                pendingMomoPayment = PendingMomoPayment(
+                                pendingZaloPayPayment = PendingZaloPayPayment(
                                     transactionId = checkoutData.transactionId,
                                     paymentInfo = paymentInfo
                                 ),
@@ -226,8 +226,7 @@ class PaymentViewModel(
                             fetchWalletData()
                             _uiState.value = _uiState.value.copy(
                                 isCheckoutProcessing = false,
-                                checkoutSuccessMessage = response.message?.ifBlank { "Thanh toán thành công." },
-                                pendingMomoPayment = null,
+                                pendingZaloPayPayment = null,
                                 navigateToHome = false
                             )
                         }
@@ -247,7 +246,7 @@ class PaymentViewModel(
                                     _uiState.value = _uiState.value.copy(
                                         isCheckoutProcessing = false,
                                         checkoutSuccessMessage = message?.ifBlank { null } ?: "Thanh toán thành công.",
-                                        pendingMomoPayment = null,
+                                        pendingZaloPayPayment = null,
                                         navigateToHome = true
                                     )
                                 }
@@ -271,7 +270,7 @@ class PaymentViewModel(
         }
     }
 
-    fun confirmMomoPayment(transactionId: String) {
+    fun confirmZaloPayPayment(transactionId: String) {
         if (transactionId.isBlank()) return
 
         viewModelScope.launch {
@@ -287,7 +286,7 @@ class PaymentViewModel(
                     _uiState.value = _uiState.value.copy(
                         isCheckoutProcessing = false,
                         checkoutSuccessMessage = message?.ifBlank { null } ?: "Thanh toán thành công.",
-                        pendingMomoPayment = null,
+                        pendingZaloPayPayment = null,
                         navigateToHome = false
                     )
                 }
@@ -310,9 +309,9 @@ class PaymentViewModel(
         }
     }
 
-    fun clearPendingMomoPayment() {
-        if (_uiState.value.pendingMomoPayment != null) {
-            _uiState.value = _uiState.value.copy(pendingMomoPayment = null)
+    fun clearPendingZaloPayPayment() {
+        if (_uiState.value.pendingZaloPayPayment != null) {
+            _uiState.value = _uiState.value.copy(pendingZaloPayPayment = null)
         }
     }
 

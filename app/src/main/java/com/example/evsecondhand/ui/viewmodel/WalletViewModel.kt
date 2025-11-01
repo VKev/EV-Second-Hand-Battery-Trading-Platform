@@ -23,6 +23,7 @@ data class WalletState(
     val totalPages: Int = 1,
     val totalTransactions: Int = 0,
     val depositPayUrl: String? = null,
+    val zpTransToken: String? = null, // ZaloPay transaction token for SDK
     val showDepositDialog: Boolean = false
 )
 
@@ -131,10 +132,11 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
             val result = repository.depositFunds(amount)
             
             result.onSuccess { depositData ->
-                Log.d(TAG, "Deposit request successful")
+                Log.d(TAG, "Deposit request successful - zpTransToken: ${depositData.requestId}")
                 _state.value = _state.value.copy(
                     isLoading = false,
                     depositPayUrl = depositData.payUrl,
+                    zpTransToken = depositData.requestId, // This is the zp_trans_token from ZaloPay
                     showDepositDialog = false
                 )
             }.onFailure { exception ->
@@ -148,7 +150,7 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
     }
     
     fun clearDepositPayUrl() {
-        _state.value = _state.value.copy(depositPayUrl = null)
+        _state.value = _state.value.copy(depositPayUrl = null, zpTransToken = null)
     }
 
     fun withdrawFunds() {

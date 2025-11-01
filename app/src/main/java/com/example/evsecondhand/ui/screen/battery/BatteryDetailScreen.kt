@@ -67,6 +67,7 @@ fun BatteryDetailScreen(
     batteryId: String,
     onBackClick: () -> Unit,
     onBidClick: (String) -> Unit,
+    onPaymentDashboard: (Battery) -> Unit = {},
     viewModel: BatteryDetailViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -119,7 +120,8 @@ fun BatteryDetailScreen(
                         state = state,
                         modifier = Modifier.navigationBarsPadding(),
                         onDepositClick = { viewModel.placeDeposit() },
-                        onBidClick = { onBidClick(currentBattery.id) }
+                        onBidClick = { onBidClick(currentBattery.id) },
+                        onPaymentDashboard = onPaymentDashboard
                     )
                 }
 
@@ -140,7 +142,8 @@ private fun BatteryDetailContent(
     state: BatteryDetailState,
     modifier: Modifier = Modifier,
     onDepositClick: () -> Unit,
-    onBidClick: () -> Unit
+    onBidClick: () -> Unit,
+    onPaymentDashboard: (Battery) -> Unit
 ) {
     LazyColumn(
         modifier = modifier
@@ -200,7 +203,10 @@ private fun BatteryDetailContent(
         }
 
         item {
-            ActionButtonsRow()
+            ActionButtonsRow(
+                battery = battery,
+                onPaymentDashboard = onPaymentDashboard
+            )
         }
     }
 }
@@ -584,19 +590,28 @@ private fun DescriptionSection(description: String) {
 }
 
 @Composable
-private fun ActionButtonsRow() {
+private fun ActionButtonsRow(
+    battery: Battery?,
+    onPaymentDashboard: (Battery) -> Unit
+) {
+    val isAuctionItem = battery?.isAuction == true ||
+        battery?.status?.contains("AUCTION", ignoreCase = true) == true
+    val primaryActionLabel = if (isAuctionItem) "Dau gia" else "Mua ngay"
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Button(
-            onClick = { /* TODO: Buy now action */ },
+            onClick = {
+                battery?.let { onPaymentDashboard(it) }
+            },
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
         ) {
             Text(
-                text = "Mua ngay",
+                text = primaryActionLabel,
                 style = MaterialTheme.typography.labelLarge.copy(
                     color = Color.White,
                     fontWeight = FontWeight.Bold
