@@ -42,6 +42,7 @@ import com.example.evsecondhand.ui.screen.battery.BatteryDetailScreen
 import com.example.evsecondhand.ui.screen.home.HomeScreen
 import com.example.evsecondhand.ui.screen.vehicle.VehicleDetailScreen
 import com.example.evsecondhand.ui.theme.PrimaryGreen
+import com.example.evsecondhand.ui.viewmodel.AuthState
 import com.example.evsecondhand.ui.viewmodel.AuthViewModel
 import com.example.evsecondhand.ui.viewmodel.HomeViewModel
 
@@ -64,10 +65,14 @@ fun AppNavigation(
 ) {
     val navController = rememberNavController()
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
-    val startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route
+    val authState by authViewModel.authState.collectAsState()
 
-    LaunchedEffect(isLoggedIn) {
-        if (!isLoggedIn) {
+    // Nếu đang trao đổi code, coi như sắp đăng nhập, không nhảy về Login vội
+    val startDestination = if (isLoggedIn || authState is AuthState.ExchangingCode) Screen.Home.route else Screen.Login.route
+
+    LaunchedEffect(isLoggedIn, authState) {
+        // Chỉ điều hướng về Login nếu thực sự đã logout và không đang xử lý gì cả
+        if (!isLoggedIn && authState is AuthState.LoggedOut) {
             navController.navigate(Screen.Login.route) {
                 popUpTo(0) { inclusive = true }
             }

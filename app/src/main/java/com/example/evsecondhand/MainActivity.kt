@@ -30,7 +30,8 @@ class MainActivity : ComponentActivity() {
         // Initialize ZaloPay SDK
         ZaloPaySDKHelper.init()
         
-        // Handle deep link from ZaloPay
+        // Handle deep link if the app is launched from it
+        handleAuthDeepLink(intent)
         handleZaloPayDeepLink(intent)
 
         setContent {
@@ -47,6 +48,7 @@ class MainActivity : ComponentActivity() {
     
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        // Handle deep link if the app is already running
         handleAuthDeepLink(intent)
         handleZaloPayDeepLink(intent)
     }

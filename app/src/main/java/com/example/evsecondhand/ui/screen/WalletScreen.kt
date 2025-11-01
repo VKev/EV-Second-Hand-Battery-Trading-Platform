@@ -108,6 +108,31 @@ fun WalletScreen(
         }
     }
     
+    // Mở ZaloPay qua payUrl (fallback browser nếu app chưa cài)
+    LaunchedEffect(state.depositPayUrl) {
+        state.depositPayUrl?.let { payUrl ->
+            try {
+                // Ưu tiên mở app ZaloPay
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(payUrl))
+                intent.setPackage("com.vng.zalopay")
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                // Fallback: mở trình duyệt
+                try {
+                    val webIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(payUrl))
+                    context.startActivity(webIntent)
+                } catch (e2: Exception) {
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Không thể mở liên kết thanh toán.")
+                    }
+                }
+            } finally {
+                // Dọn state để tránh tự mở lại
+                viewModel.clearDepositPayUrl()
+            }
+        }
+    }
+    
     // Show deposit dialog
     if (state.showDepositDialog) {
         DepositDialog(

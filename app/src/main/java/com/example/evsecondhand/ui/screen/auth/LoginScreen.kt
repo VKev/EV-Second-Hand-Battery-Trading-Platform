@@ -309,7 +309,8 @@ fun LoginScreen(
 
                     OutlinedButton(
                         onClick = {
-                            val googleAuthUrl = RetrofitClient.BASE_URL + "auth/google"
+                            // Thêm client_type=mobile vào URL
+                            val googleAuthUrl = RetrofitClient.BASE_URL + "auth/google?client_type=mobile"
                             uriHandler.openUri(googleAuthUrl)
                         },
                         modifier = Modifier

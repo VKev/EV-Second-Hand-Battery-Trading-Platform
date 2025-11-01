@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     
-    const val BASE_URL = "https://beevmarket-production.up.railway.app/api/v1/"
+    const val BASE_URL = "https://evmarket-api-staging-backup.onrender.com/api/v1/"
     
     private val json = Json {
         ignoreUnknownKeys = true
