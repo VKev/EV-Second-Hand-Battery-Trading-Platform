@@ -1,5 +1,6 @@
 package com.example.evsecondhand.ui.screen.battery
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,6 +56,7 @@ import com.example.evsecondhand.data.model.BatterySpecifications
 import com.example.evsecondhand.data.model.Seller
 import com.example.evsecondhand.ui.theme.PrimaryGreen
 import com.example.evsecondhand.ui.theme.TextSecondary
+import com.example.evsecondhand.ui.viewmodel.BatteryDetailState
 import com.example.evsecondhand.ui.viewmodel.BatteryDetailViewModel
 import java.text.NumberFormat
 import java.util.Locale
@@ -63,14 +66,23 @@ import java.util.Locale
 fun BatteryDetailScreen(
     batteryId: String,
     onBackClick: () -> Unit,
-    viewModel: BatteryDetailViewModel = (viewModel()),
-    onPaymentDashboard: () -> Unit
+    onBidClick: (String) -> Unit,
+    viewModel: BatteryDetailViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
     val currentBattery = state.battery
+    val context = LocalContext.current
 
     LaunchedEffect(batteryId) {
         viewModel.loadBattery(batteryId)
+    }
+
+    LaunchedEffect(state.depositMessage) {
+        val message = state.depositMessage
+        if (!message.isNullOrBlank()) {
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            viewModel.clearDepositMessage()
+        }
     }
 
     Scaffold(
@@ -104,8 +116,10 @@ fun BatteryDetailScreen(
                 currentBattery != null -> {
                     BatteryDetailContent(
                         battery = currentBattery,
+                        state = state,
                         modifier = Modifier.navigationBarsPadding(),
-                        onPaymentDashboard = onPaymentDashboard
+                        onDepositClick = { viewModel.placeDeposit() },
+                        onBidClick = { onBidClick(currentBattery.id) }
                     )
                 }
 
@@ -123,8 +137,10 @@ fun BatteryDetailScreen(
 @Composable
 private fun BatteryDetailContent(
     battery: Battery,
+    state: BatteryDetailState,
     modifier: Modifier = Modifier,
-    onPaymentDashboard: () -> Unit
+    onDepositClick: () -> Unit,
+    onBidClick: () -> Unit
 ) {
     LazyColumn(
         modifier = modifier
@@ -141,7 +157,7 @@ private fun BatteryDetailContent(
             TitleSection(
                 title = battery.title,
                 price = battery.price,
-                subtitle = "${battery.brand} • ${battery.year}"
+                subtitle = "${battery.brand} - ${battery.year}"
             )
         }
 
@@ -160,6 +176,17 @@ private fun BatteryDetailContent(
             }
         }
 
+        if (battery.isAuction == true) {
+            item {
+                BatteryDepositSection(
+                    battery = battery,
+                    state = state,
+                    onDepositClick = onDepositClick,
+                    onBidClick = onBidClick
+                )
+            }
+        }
+
         battery.seller?.let { seller ->
             item {
                 SellerSection(seller = seller)
@@ -173,7 +200,7 @@ private fun BatteryDetailContent(
         }
 
         item {
-            ActionButtonsRow(onPaymentDashboard = onPaymentDashboard)
+            ActionButtonsRow()
         }
     }
 }
@@ -367,7 +394,7 @@ private fun SpecificationSection(specs: BatterySpecifications) {
             )
             SpecRow("Khối lượng", specs.weight)
             SpecRow("Điện áp", specs.voltage)
-            SpecRow("Hoá học", specs.chemistry)
+            SpecRow("Hóa học", specs.chemistry)
             SpecRow("Suy hao", specs.degradation)
             SpecRow("Thời gian sạc", specs.chargingTime)
             SpecRow("Lắp đặt", specs.installation)
@@ -376,7 +403,6 @@ private fun SpecificationSection(specs: BatterySpecifications) {
         }
     }
 }
-
 @Composable
 private fun SpecRow(label: String, value: String?) {
     if (value.isNullOrBlank()) return
@@ -402,6 +428,98 @@ private fun SpecRow(label: String, value: String?) {
     }
 }
 
+@Composable
+private fun BatteryDepositSection(
+    battery: Battery,
+    state: BatteryDetailState,
+    onDepositClick: () -> Unit,
+    onBidClick: () -> Unit
+) {
+    val depositAmount = battery.depositAmount?.takeIf { it > 0 }
+    val formatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+    val depositAmountText = depositAmount?.let { formatter.format(it) }
+
+    Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "Đặt cọc để tham gia đấu giá",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+            )
+
+            if (depositAmountText != null) {
+                Text(
+                    text = "Số tiền đặt cọc: $depositAmountText",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    color = PrimaryGreen
+                )
+            } else {
+                Text(
+                    text = "Liên hệ với người bán để biết số tiền đặt cọc.",
+                    style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary)
+                )
+            }
+
+            val infoText = if (state.canBid) {
+                "Bạn đã sẵn sàng đấu giá phiên này."
+            } else {
+                "Sau khi thanh toán đặt cọc thành công, bạn sẽ được kích hoạt quyền đặt giá."
+            }
+
+            Text(
+                text = infoText,
+                style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary)
+            )
+
+            if (state.hasDeposit && !state.canBid) {
+                Text(
+                    text = "Hệ thống đang cập nhật trạng thái đấu giá...",
+                    style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
+                )
+            }
+
+            if (!state.depositError.isNullOrBlank()) {
+                Text(
+                    text = state.depositError,
+                    style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.error)
+                )
+            }
+
+            val buttonLabel = when {
+                state.canBid -> "Đấu giá ngay"
+                depositAmountText != null -> "Đặt cọc ngay"
+                else -> "Liên hệ đặt cọc"
+            }
+
+            Button(
+                onClick = if (state.canBid) onBidClick else onDepositClick,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+                enabled = !state.isProcessingDeposit
+            ) {
+                if (state.isProcessingDeposit) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text = buttonLabel,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+    }
+}
 @Composable
 private fun SellerSection(seller: Seller) {
     Card(
@@ -466,13 +584,13 @@ private fun DescriptionSection(description: String) {
 }
 
 @Composable
-private fun ActionButtonsRow(onPaymentDashboard: () -> Unit) {
+private fun ActionButtonsRow() {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Button(
-            onClick = { onPaymentDashboard() },
+            onClick = { /* TODO: Buy now action */ },
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
@@ -524,3 +642,4 @@ private fun ErrorState(
         }
     }
 }
+

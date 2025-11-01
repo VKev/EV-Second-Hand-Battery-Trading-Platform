@@ -1,7 +1,16 @@
 package com.example.evsecondhand.data.remote
 
+import com.example.evsecondhand.data.remote.AuctionApiService
+import com.example.evsecondhand.data.remote.AuthApiService
+import com.example.evsecondhand.data.remote.ChatbotApiService
+import com.example.evsecondhand.data.remote.CheckoutApiService
+import com.example.evsecondhand.data.remote.ProductApiService
+import com.example.evsecondhand.data.remote.PurchaseApiService
+import com.example.evsecondhand.data.remote.WalletApiService
+import com.example.evsecondhand.data.remote.SellerApiService
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
+import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -9,43 +18,52 @@ import retrofit2.Retrofit
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-
-    // Retrofit requires the base URL to end with a trailing slash.
-    private const val BASE_URL = "https://evmarket-api-staging-backup.onrender.com/api/v1/"
+    
+    private const val BASE_URL = "https://beevmarket-production.up.railway.app/api/v1/"
     
     private val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
         isLenient = true
-        prettyPrint = true
     }
     
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
-    
-    // Add headers interceptor to match web app behavior
-    private val headersInterceptor = okhttp3.Interceptor { chain ->
-        val original = chain.request()
-        val requestBuilder = original.newBuilder()
-            .header("Accept", "application/json")
-            .header("Origin", "https://ev-market-0209.vercel.app")
-            .header("Referer", "https://ev-market-0209.vercel.app/")
-            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36")
 
-        val request = requestBuilder.build()
-        chain.proceed(request)
+    private var tokenProvider: (() -> String?)? = null
+
+    @Volatile
+    private var cachedToken: String? = null
+
+    fun setTokenProvider(provider: () -> String?) {
+        tokenProvider = provider
+        cachedToken = provider()?.takeUnless { it.isNullOrBlank() }
     }
 
+    fun updateAccessToken(token: String?) {
+        cachedToken = token?.takeUnless { it.isBlank() }
+    }
+
+    private val authInterceptor = Interceptor { chain ->
+        val originalRequest = chain.request()
+        val token = cachedToken ?: tokenProvider?.invoke()
+        val authorisedRequest = if (!token.isNullOrBlank()) {
+            originalRequest.newBuilder()
+                .addHeader("Authorization", "Bearer $token")
+                .build()
+        } else {
+            originalRequest
+        }
+        chain.proceed(authorisedRequest)
+    }
+    
     private val okHttpClient = OkHttpClient.Builder()
-        .addInterceptor(headersInterceptor)
+        .addInterceptor(authInterceptor)
         .addInterceptor(loggingInterceptor)
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(15, TimeUnit.SECONDS)
-        .writeTimeout(15, TimeUnit.SECONDS)
-        .callTimeout(20, TimeUnit.SECONDS)
-        .retryOnConnectionFailure(true)
-        .connectionPool(okhttp3.ConnectionPool(5, 30, TimeUnit.SECONDS))
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
         .build()
     
     private val retrofit = Retrofit.Builder()
@@ -55,10 +73,11 @@ object RetrofitClient {
         .build()
     
     val productApi: ProductApiService = retrofit.create(ProductApiService::class.java)
+    val auctionApi: AuctionApiService = retrofit.create(AuctionApiService::class.java)
     val authApi: AuthApiService = retrofit.create(AuthApiService::class.java)
     val chatbotApi: ChatbotApiService = retrofit.create(ChatbotApiService::class.java)
     val checkoutApi: CheckoutApiService = retrofit.create(CheckoutApiService::class.java)
-    val sellerApi: SellerApiService = retrofit.create(SellerApiService::class.java)
     val walletApi: WalletApiService = retrofit.create(WalletApiService::class.java)
     val purchaseApi: PurchaseApiService = retrofit.create(PurchaseApiService::class.java)
+    val sellerApi: SellerApiService = retrofit.create(SellerApiService::class.java)
 }

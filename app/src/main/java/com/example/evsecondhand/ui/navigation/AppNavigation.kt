@@ -4,40 +4,46 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Wallet
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.navArgument
 import androidx.navigation.compose.rememberNavController
-import com.example.evsecondhand.ui.screen.*
-import com.example.evsecondhand.ui.screen.battery.BatteryDetailScreen
+import androidx.navigation.navArgument
+import com.example.evsecondhand.ui.screen.AddPostScreen
+import com.example.evsecondhand.ui.screen.ProfileScreen
+import com.example.evsecondhand.ui.screen.WalletScreen
+import com.example.evsecondhand.ui.screen.auction.AuctionScreen
+import com.example.evsecondhand.ui.screen.auctiondetail.AuctionDetailScreen
+import com.example.evsecondhand.ui.screen.auctions.AuctionsScreen
 import com.example.evsecondhand.ui.screen.auth.LoginScreen
 import com.example.evsecondhand.ui.screen.auth.RegisterScreen
+import com.example.evsecondhand.ui.screen.battery.BatteryDetailScreen
 import com.example.evsecondhand.ui.screen.home.HomeScreen
-import com.example.evsecondhand.ui.screen.seller.SellerCreateListingScreen
-import com.example.evsecondhand.ui.screen.seller.SellerDashboardScreen
-import com.example.evsecondhand.ui.screen.payment.PaymentDashboardScreen
 import com.example.evsecondhand.ui.screen.vehicle.VehicleDetailScreen
 import com.example.evsecondhand.ui.theme.PrimaryGreen
 import com.example.evsecondhand.ui.viewmodel.AuthViewModel
 import com.example.evsecondhand.ui.viewmodel.HomeViewModel
-import com.example.evsecondhand.ui.viewmodel.PaymentViewModel
-import com.example.evsecondhand.ui.viewmodel.SellerCreateListingViewModel
-import com.example.evsecondhand.ui.viewmodel.SellerDashboardViewModel
 
 sealed class BottomNavItem(
     val route: String,
@@ -45,7 +51,7 @@ sealed class BottomNavItem(
     val icon: ImageVector
 ) {
     object Home : BottomNavItem(Screen.Home.route, "Trang chủ", Icons.Default.Home)
-    object Products : BottomNavItem(Screen.Products.route, "Sản phẩm", Icons.Default.ShoppingCart)
+    object Auctions : BottomNavItem(Screen.Auctions.route, "Đấu giá", Icons.Default.Gavel)
     object AddPost : BottomNavItem(Screen.AddPost.route, "Đăng tin", Icons.Default.Add)
     object Wallet : BottomNavItem(Screen.Wallet.route, "Ví", Icons.Default.Wallet)
     object Profile : BottomNavItem(Screen.Profile.route, "Hồ sơ", Icons.Default.Person)
@@ -59,8 +65,7 @@ fun AppNavigation(
     val navController = rememberNavController()
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
     val startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route
-    
-    // Navigate to login when logged out
+
     LaunchedEffect(isLoggedIn) {
         if (!isLoggedIn) {
             navController.navigate(Screen.Login.route) {
@@ -68,7 +73,7 @@ fun AppNavigation(
             }
         }
     }
-    
+
     Scaffold(
         bottomBar = {
             if (isLoggedIn && shouldShowBottomBar(navController)) {
@@ -94,7 +99,7 @@ fun AppNavigation(
                     }
                 )
             }
-            
+
             composable(Screen.Register.route) {
                 RegisterScreen(
                     authViewModel = authViewModel,
@@ -108,7 +113,7 @@ fun AppNavigation(
                     }
                 )
             }
-            
+
             composable(Screen.Home.route) {
                 HomeScreen(
                     homeViewModel = homeViewModel,
@@ -132,14 +137,7 @@ fun AppNavigation(
                     BatteryDetailScreen(
                         batteryId = batteryId,
                         onBackClick = { navController.popBackStack() },
-                        onPaymentDashboard = {
-                            navController.navigate(
-                                Screen.Payment.createRoute(
-                                    itemType = "battery",
-                                    itemId = batteryId
-                                )
-                            )
-                        }
+                        onBidClick = { navController.navigate(Screen.Auctions.route) }
                     )
                 }
             }
@@ -155,152 +153,66 @@ fun AppNavigation(
                     VehicleDetailScreen(
                         vehicleId = vehicleId,
                         onBackClick = { navController.popBackStack() },
-                        onPaymentDashboard = {
-                            navController.navigate(
-                                Screen.Payment.createRoute(
-                                    itemType = "vehicle",
-                                    itemId = vehicleId
-                                )
-                            )
-                        }
+                        onBidClick = { navController.navigate(Screen.VehicleAuction.createRoute(vehicleId)) }
                     )
-                }
-            }
-
-
-            composable(Screen.Products.route) {
-                ProductsScreen()
-            }
-            
-            composable(Screen.AddPost.route) {
-                val token = authViewModel.getAccessToken()
-                if (token.isNullOrBlank()) {
-                    AddPostScreen()
-                } else {
-                    val application = LocalContext.current.applicationContext as android.app.Application
-                    val createViewModel: SellerCreateListingViewModel = viewModel(
-                        factory = SellerCreateListingViewModel.provideFactory(application, token)
-                    )
-                    SellerCreateListingScreen(
-                        viewModel = createViewModel,
-                        onBackClick = { navController.popBackStack() },
-                        onNavigateToDashboard = {
-                            navController.navigate(Screen.SellerDashboard.route) {
-                                popUpTo(Screen.AddPost.route) { inclusive = true }
-                            }
-                        }
-                    )
-                }
-            }
-
-            composable(Screen.SellerDashboard.route) {
-                val token = authViewModel.getAccessToken()
-                if (token.isNullOrBlank()) {
-                    AddPostScreen()
-                } else {
-                    val sellerDashboardViewModel: SellerDashboardViewModel = viewModel(
-                        factory = SellerDashboardViewModel.provideFactory(token)
-                    )
-                    SellerDashboardScreen(
-                        viewModel = sellerDashboardViewModel,
-                        onBatteryClick = { batteryId ->
-                            navController.navigate(Screen.BatteryDetail.createRoute(batteryId))
-                        },
-                        onBackClick = { navController.popBackStack() },
-                        onAddListingClick = {
-                            navController.navigate(Screen.AddPost.route)
-                        }
-                    )
-                }
-            }
-            
-            composable(Screen.Wallet.route) {
-                if (!isLoggedIn) {
-                    LaunchedEffect(Unit) {
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Home.route) { inclusive = false }
-                        }
-                    }
-                } else {
-                    WalletScreen()
                 }
             }
 
             composable(
-                route = "${Screen.Payment.route}?${Screen.Payment.ARG_ITEM_TYPE}={${Screen.Payment.ARG_ITEM_TYPE}}&${Screen.Payment.ARG_ITEM_ID}={${Screen.Payment.ARG_ITEM_ID}}",
-                arguments = listOf(
-                    navArgument(Screen.Payment.ARG_ITEM_TYPE) {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    },
-                    navArgument(Screen.Payment.ARG_ITEM_ID) {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    }
-                )
+                route = Screen.VehicleAuction.route,
+                arguments = listOf(navArgument("vehicleId") { type = NavType.StringType })
             ) { backStackEntry ->
-                val token = authViewModel.getAccessToken()
-                if (token.isNullOrBlank()) {
-                    Text(
-                        text = "Vui lòng đăng nhập để truy cập trang thanh toán.",
-                        modifier = Modifier.padding(24.dp),
-                        color = MaterialTheme.colorScheme.error
-                    )
+                val auctionVehicleId = backStackEntry.arguments?.getString("vehicleId")
+                if (auctionVehicleId == null) {
+                    navController.popBackStack()
                 } else {
-                    val itemType = backStackEntry.arguments?.getString(Screen.Payment.ARG_ITEM_TYPE)
-                    val itemId = backStackEntry.arguments?.getString(Screen.Payment.ARG_ITEM_ID)
-
-                    val paymentViewModel: PaymentViewModel = viewModel(
-                        factory = PaymentViewModel.provideFactory(token)
-                    )
-                    PaymentDashboardScreen(
-                        viewModel = paymentViewModel,
-                        productType = itemType,
-                        productId = itemId,
-                        onBackClick = { navController.popBackStack() },
-                        onPaymentSuccess = {
-                            navController.navigate(Screen.Home.route) {
-                                popUpTo(Screen.Home.route) { inclusive = false }
-                                launchSingleTop = true
-                            }
-                        }
+                    AuctionScreen(
+                        vehicleId = auctionVehicleId,
+                        onBackClick = { navController.popBackStack() }
                     )
                 }
+            }
+
+            composable(Screen.Auctions.route) {
+                AuctionsScreen(onAuctionClick = { summary ->
+                    if (summary.listingId.isNotBlank()) {
+                        navController.navigate(
+                            Screen.AuctionDetail.createRoute(summary.listingType, summary.listingId)
+                        )
+                    }
+                })
+            }
+
+            composable(
+                route = Screen.AuctionDetail.route,
+                arguments = listOf(
+                    navArgument("listingType") { type = NavType.StringType },
+                    navArgument("listingId") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val listingType = backStackEntry.arguments?.getString("listingType")
+                val listingId = backStackEntry.arguments?.getString("listingId")
+                if (listingType.isNullOrBlank() || listingId.isNullOrBlank()) {
+                    navController.popBackStack()
+                } else {
+                    AuctionDetailScreen(
+                        listingType = listingType,
+                        listingId = listingId,
+                        onBackClick = { navController.popBackStack() }
+                    )
+                }
+            }
+
+            composable(Screen.AddPost.route) {
+                AddPostScreen()
+            }
+
+            composable(Screen.Wallet.route) {
+                WalletScreen()
             }
 
             composable(Screen.Profile.route) {
-                if (!isLoggedIn) {
-                    LaunchedEffect(Unit) {
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Home.route) { inclusive = false }
-                        }
-                    }
-                } else {
-                    ProfileScreen(
-                        authViewModel = authViewModel,
-                        onNavigateToPurchaseHistory = {
-                            navController.navigate(Screen.PurchaseHistory.route)
-                        }
-                    )
-                }
-            }
-
-            composable(Screen.PurchaseHistory.route) {
-                if (!isLoggedIn) {
-                    LaunchedEffect(Unit) {
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Home.route) { inclusive = false }
-                        }
-                    }
-                } else {
-                    PurchaseHistoryScreen(
-                        onBackClick = {
-                            navController.popBackStack()
-                        }
-                    )
-                }
+                ProfileScreen(authViewModel = authViewModel)
             }
         }
     }
@@ -310,13 +222,7 @@ fun AppNavigation(
 fun shouldShowBottomBar(navController: NavHostController): Boolean {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    return currentRoute !in listOf(
-        Screen.Login.route,
-        Screen.Register.route,
-        Screen.AddPost.route,
-        Screen.SellerDashboard.route,
-        Screen.Payment.route
-    )
+    return currentRoute !in listOf(Screen.Login.route, Screen.Register.route)
 }
 
 @Composable
@@ -327,7 +233,7 @@ fun BottomNavigationBar(
     val items = if (isLoggedIn) {
         listOf(
             BottomNavItem.Home,
-            BottomNavItem.Products,
+            BottomNavItem.Auctions,
             BottomNavItem.AddPost,
             BottomNavItem.Wallet,
             BottomNavItem.Profile
@@ -335,21 +241,21 @@ fun BottomNavigationBar(
     } else {
         listOf(
             BottomNavItem.Home,
-            BottomNavItem.Products,
+            BottomNavItem.Auctions,
             BottomNavItem.Profile
         )
     }
-    
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    
+
     NavigationBar(
         containerColor = Color.White,
         tonalElevation = 8.dp
     ) {
         items.forEach { item ->
             val selected = currentRoute == item.route
-            
+
             NavigationBarItem(
                 icon = {
                     if (item == BottomNavItem.AddPost) {
