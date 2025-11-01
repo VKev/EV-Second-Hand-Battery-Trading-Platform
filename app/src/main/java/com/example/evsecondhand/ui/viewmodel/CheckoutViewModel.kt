@@ -146,7 +146,7 @@ class CheckoutViewModel(application: Application) : AndroidViewModel(application
             result.onSuccess { response ->
                 Log.d(TAG, "Checkout successful: ${response.message}")
                 
-                // Both WALLET and MoMo - immediate success
+                // Both WALLET and ZaloPay - immediate success
                 // Backend will process transaction asynchronously
                 _uiState.value = currentState.copy(
                     checkoutState = CheckoutState.Success(response)
@@ -192,7 +192,7 @@ class CheckoutViewModel(application: Application) : AndroidViewModel(application
         val currentState = _uiState.value
         return when (currentState.selectedPaymentMethod) {
             PaymentMethod.WALLET -> currentState.walletBalance >= currentState.listingPrice
-            PaymentMethod.MOMO -> true // MoMo luôn cho phép proceed
+            PaymentMethod.ZALOPAY -> true // ZaloPay luôn cho phép proceed
         }
     }
 }

@@ -1,10 +1,12 @@
-package com.example.evsecondhand.ui.navigation
+﻿package com.example.evsecondhand.ui.navigation
+
+import android.net.Uri
 
 sealed class Screen(val route: String) {
     object Login : Screen("login")
     object Register : Screen("register")
     object Home : Screen("home")
-    object Products : Screen("products")
+    object Auctions : Screen("auctions")
     object AddPost : Screen("add_post")
     object Wallet : Screen("wallet")
     object Payment : Screen("payment") {
@@ -24,5 +26,15 @@ sealed class Screen(val route: String) {
     }
     object VehicleDetail : Screen("vehicle_detail/{vehicleId}") {
         fun createRoute(vehicleId: String) = "vehicle_detail/$vehicleId"
+    }
+    object VehicleAuction : Screen("auction/vehicle/{vehicleId}") {
+        fun createRoute(vehicleId: String) = "auction/vehicle/$vehicleId"
+    }
+    object AuctionDetail : Screen("auction/detail/{listingType}/{listingId}") {
+        fun createRoute(listingType: String, listingId: String): String {
+            val encodedType = Uri.encode(listingType)
+            val encodedId = Uri.encode(listingId)
+            return "auction/detail/$encodedType/$encodedId"
+        }
     }
 }

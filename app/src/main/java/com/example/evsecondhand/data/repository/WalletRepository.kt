@@ -3,9 +3,13 @@ package com.example.evsecondhand.data.repository
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import com.example.evsecondhand.data.model.DepositData
 import com.example.evsecondhand.data.model.Transaction
 import com.example.evsecondhand.data.model.WalletBalance
 import com.example.evsecondhand.data.remote.WalletApiService
+import com.example.evsecondhand.data.zalopay.CreateOrder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class WalletRepository(
     private val walletApi: WalletApiService,
@@ -58,19 +62,55 @@ class WalletRepository(
         }
     }
     
-    suspend fun depositFunds(amount: Int): Result<com.example.evsecondhand.data.model.DepositData> {
-        return try {
-            val token = getBearerToken()
-            Log.d(TAG, "Requesting deposit - amount: $amount")
-            
-            val request = com.example.evsecondhand.data.model.DepositRequest(amount)
-            val response = walletApi.depositFunds(token, request)
-            Log.d(TAG, "Deposit request successful - payUrl: ${response.data.payUrl}")
-            
-            Result.success(response.data)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error requesting deposit", e)
-            Result.failure(e)
+    suspend fun depositFunds(amount: Int): Result<DepositData> {
+        return withContext(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Creating ZaloPay order - amount: $amount")
+                
+                // Use ZaloPay instead of backend API
+                val createOrder = CreateOrder()
+                val response = createOrder.createOrder(amount.toString())
+                
+                if (response == null) {
+                    Log.e(TAG, "ZaloPay order creation failed - null response")
+                    return@withContext Result.failure(Exception("Failed to create ZaloPay order"))
+                }
+                
+                val returnCode = response.optInt("return_code", -1)
+                val returnMessage = response.optString("return_message", "Unknown error")
+                
+                if (returnCode == 1) {
+                    // Success
+                    val zpTransToken = response.optString("zp_trans_token", "")
+                    val orderUrl = response.optString("order_url", "")
+                    val orderId = response.optString("app_trans_id", "")
+                    
+                    Log.d(TAG, "ZaloPay order created successfully - orderId: $orderId")
+                    
+                    // Convert ZaloPay response to DepositData format
+                    val depositData = DepositData(
+                        partnerCode = "ZALOPAY",
+                        orderId = orderId,
+                        requestId = zpTransToken,
+                        amount = amount,
+                        responseTime = System.currentTimeMillis(),
+                        message = returnMessage,
+                        resultCode = returnCode,
+                        payUrl = orderUrl,
+                        deeplink = orderUrl,
+                        qrCodeUrl = orderUrl,
+                        deeplinkMiniApp = orderUrl
+                    )
+                    
+                    Result.success(depositData)
+                } else {
+                    Log.e(TAG, "ZaloPay order creation failed - code: $returnCode, message: $returnMessage")
+                    Result.failure(Exception("ZaloPay error: $returnMessage"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error creating ZaloPay order", e)
+                Result.failure(e)
+            }
         }
     }
 }

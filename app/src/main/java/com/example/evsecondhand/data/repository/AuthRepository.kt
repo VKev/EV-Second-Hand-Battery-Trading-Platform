@@ -3,12 +3,12 @@ package com.example.evsecondhand.data.repository
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
-import com.example.evsecondhand.data.model.AuthData
 import com.example.evsecondhand.data.model.AuthResponse
 import com.example.evsecondhand.data.model.LoginRequest
 import com.example.evsecondhand.data.model.RegisterRequest
 import com.example.evsecondhand.data.model.User
 import com.example.evsecondhand.data.remote.AuthApiService
+import com.example.evsecondhand.data.remote.RetrofitClient
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
@@ -43,6 +43,11 @@ class AuthRepository(
         FirebaseDatabase.getInstance(FIREBASE_DATABASE_URL)
     private val usersRef = firebaseDatabase.getReference("users")
 
+    init {
+        RetrofitClient.setTokenProvider { getAccessToken() }
+        RetrofitClient.updateAccessToken(getAccessToken())
+    }
+
     suspend fun login(email: String, password: String): Result<AuthResponse> {
         return try {
             val response = authApi.login(LoginRequest(email, password))
@@ -72,22 +77,11 @@ class AuthRepository(
 
             ensureUserProfile(firebaseUser)
 
-            val idTokenResult = firebaseUser.getIdToken(true).await()
-            val firebaseToken = idTokenResult.token ?: error("Unable to retrieve Firebase ID token")
+            val backendResponse = obtainBackendSession(firebaseUser)
+            saveAuthData(backendResponse.data.accessToken, backendResponse.data.user)
+            Log.d(TAG, "Google sign-in successful - User: ${backendResponse.data.user.email}")
 
-            val user = firebaseUser.toDomainUser()
-            saveAuthData(firebaseToken, user)
-            Log.d(TAG, "Google sign-in successful - User: ${user.email}")
-
-            Result.success(
-                AuthResponse(
-                    message = "Google sign-in successful",
-                    data = AuthData(
-                        user = user,
-                        accessToken = firebaseToken
-                    )
-                )
-            )
+            Result.success(backendResponse)
         } catch (e: Exception) {
             Log.e(TAG, "Google sign-in with Firebase failed", e)
             Result.failure(e)
@@ -95,13 +89,12 @@ class AuthRepository(
     }
 
     private fun saveAuthData(token: String, user: User) {
-        Log.d(TAG, "Saving auth data - User: ${user.email}")
         prefs.edit().apply {
             putString("access_token", token)
             putString("user", json.encodeToString(user))
             apply()
         }
-        Log.d(TAG, "Auth data saved successfully")
+        RetrofitClient.updateAccessToken(token)
     }
 
     fun getAccessToken(): String? {
@@ -120,8 +113,8 @@ class AuthRepository(
     suspend fun logout() {
         try {
             authApi.logout()
-        } catch (e: Exception) {
-            // ignore, still clear local data
+        } catch (_: Exception) {
+            // ignore to ensure local cleanup still runs
         } finally {
             firebaseAuth.signOut()
             clearLocalData()
@@ -130,6 +123,7 @@ class AuthRepository(
 
     fun clearLocalData() {
         prefs.edit().clear().apply()
+        RetrofitClient.updateAccessToken(null)
     }
 
     fun isLoggedIn(): Boolean = getAccessToken() != null
@@ -155,6 +149,27 @@ class AuthRepository(
         }
     }
 
+    private suspend fun obtainBackendSession(firebaseUser: FirebaseUser): AuthResponse {
+        val email = firebaseUser.email ?: error("Missing email from Google account")
+        val displayName = firebaseUser.displayName?.takeIf { it.isNotBlank() }
+            ?: email.substringBefore('@')
+
+        val derivedPassword = "firebase-${firebaseUser.uid}"
+
+        val loginAttempt = runCatching {
+            authApi.login(LoginRequest(email, derivedPassword))
+        }
+
+        return loginAttempt.getOrElse { loginError ->
+            runCatching {
+                authApi.register(RegisterRequest(displayName, email, derivedPassword))
+            }.getOrElse { registerError ->
+                Log.e(TAG, "Backend sync failed: login=${loginError.message}, register=${registerError.message}")
+                throw loginError
+            }
+        }
+    }
+
     private fun FirebaseUser.toDomainUser(): User {
         val createdAt = metadata?.creationTimestamp?.let { Instant.ofEpochMilli(it).toString() } ?: ""
         val updatedAt = metadata?.lastSignInTimestamp?.let { Instant.ofEpochMilli(it).toString() } ?: createdAt
@@ -170,5 +185,4 @@ class AuthRepository(
             updatedAt = updatedAt
         )
     }
-
 }
