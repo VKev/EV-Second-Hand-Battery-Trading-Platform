@@ -9,7 +9,8 @@ import retrofit2.Retrofit
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    
+
+    // Retrofit requires the base URL to end with a trailing slash.
     private const val BASE_URL = "https://evmarket-api-staging-backup.onrender.com/api/v1/"
     
     private val json = Json {
@@ -31,11 +32,11 @@ object RetrofitClient {
             .header("Origin", "https://ev-market-0209.vercel.app")
             .header("Referer", "https://ev-market-0209.vercel.app/")
             .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36")
-        
+
         val request = requestBuilder.build()
         chain.proceed(request)
     }
-    
+
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(headersInterceptor)
         .addInterceptor(loggingInterceptor)
@@ -56,7 +57,8 @@ object RetrofitClient {
     val productApi: ProductApiService = retrofit.create(ProductApiService::class.java)
     val authApi: AuthApiService = retrofit.create(AuthApiService::class.java)
     val chatbotApi: ChatbotApiService = retrofit.create(ChatbotApiService::class.java)
+    val checkoutApi: CheckoutApiService = retrofit.create(CheckoutApiService::class.java)
+    val sellerApi: SellerApiService = retrofit.create(SellerApiService::class.java)
     val walletApi: WalletApiService = retrofit.create(WalletApiService::class.java)
     val purchaseApi: PurchaseApiService = retrofit.create(PurchaseApiService::class.java)
-    val checkoutApi: CheckoutApiService = retrofit.create(CheckoutApiService::class.java)
 }

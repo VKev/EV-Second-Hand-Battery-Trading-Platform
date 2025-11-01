@@ -89,3 +89,15 @@ data class DepositData(
     val qrCodeUrl: String,
     val deeplinkMiniApp: String
 )
+
+// Withdraw request (used by wallet/checkout endpoints)
+@Serializable
+data class WithdrawRequest(
+    val amount: Long
+)
+
+// Generic server message response used across multiple APIs
+@Serializable
+data class GenericServerMessageResponse(
+    val message: String? = null
+)

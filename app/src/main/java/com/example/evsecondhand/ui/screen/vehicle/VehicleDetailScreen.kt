@@ -63,8 +63,8 @@ import java.util.Locale
 fun VehicleDetailScreen(
     vehicleId: String,
     onBackClick: () -> Unit,
-    onBuyNow: (vehicleId: String, vehicleName: String, price: Int, image: String?) -> Unit,
-    viewModel: VehicleDetailViewModel = viewModel()
+    viewModel: VehicleDetailViewModel = viewModel(),
+    onPaymentDashboard: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val currentVehicle = state.vehicle
@@ -104,7 +104,7 @@ fun VehicleDetailScreen(
                 currentVehicle != null -> {
                     VehicleDetailContent(
                         vehicle = currentVehicle,
-                        onBuyNow = onBuyNow,
+                        onPaymentDashboard = onPaymentDashboard,
                         modifier = Modifier.navigationBarsPadding()
                     )
                 }
@@ -123,8 +123,8 @@ fun VehicleDetailScreen(
 @Composable
 private fun VehicleDetailContent(
     vehicle: Vehicle,
-    onBuyNow: (vehicleId: String, vehicleName: String, price: Int, image: String?) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onPaymentDashboard: () -> Unit
 ) {
     LazyColumn(
         modifier = modifier
@@ -173,7 +173,10 @@ private fun VehicleDetailContent(
         }
 
         item {
-            ActionButtonsRow(vehicle = vehicle, onBuyNow = onBuyNow)
+            ActionButtonsRow(
+                vehicle = vehicle,
+                onPaymentDashboard = onPaymentDashboard
+            )
         }
     }
 }
@@ -492,31 +495,21 @@ private fun DescriptionSection(description: String) {
 @Composable
 private fun ActionButtonsRow(
     vehicle: Vehicle?,
-    onBuyNow: (vehicleId: String, vehicleName: String, price: Int, image: String?) -> Unit
+    onPaymentDashboard: () -> Unit
 ) {
     val isAuctionItem = vehicle?.isAuction == true ||
         vehicle?.status?.contains("AUCTION", ignoreCase = true) == true
-    val primaryActionLabel = if (isAuctionItem) "dau gia" else "mua ngay"
+    val primaryActionLabel = if (isAuctionItem) "Dau gia" else "Mua ngay"
 
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Button(
-            onClick = {
-                vehicle?.let {
-                    onBuyNow(
-                        it.id,
-                        it.title,
-                        it.price,
-                        it.images.firstOrNull()
-                    )
-                }
-            },
+            onClick = onPaymentDashboard,
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-            enabled = vehicle != null
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
         ) {
             Text(
                 text = primaryActionLabel,

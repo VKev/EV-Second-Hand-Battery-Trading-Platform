@@ -11,23 +11,23 @@ data class CheckoutRequest(
 
 @Serializable
 data class CheckoutResponse(
-    val message: String,
+    val message: String?,
     val data: CheckoutData
 )
 
 @Serializable
 data class CheckoutData(
     val transactionId: String,
-    val paymentInfo: PaymentInfo? = null, // For MoMo payment
-    val paymentDetail: PaymentDetail? = null // For WALLET payment
+    val paymentInfo: CheckoutPaymentInfo? = null, // For MoMo payment
+    val paymentDetail: CheckoutPaymentDetail? = null // For WALLET payment
 )
 
 @Serializable
-data class PaymentInfo(
+data class CheckoutPaymentInfo(
     val partnerCode: String? = null,
     val orderId: String? = null,
     val requestId: String? = null,
-    val amount: Int? = null,
+    val amount: Long? = null,
     val responseTime: Long? = null,
     val message: String? = null,
     val resultCode: Int? = null,
@@ -38,10 +38,10 @@ data class PaymentInfo(
 )
 
 @Serializable
-data class PaymentDetail(
+data class CheckoutPaymentDetail(
     val gateway: String? = null, // "MOMO" or "WALLET"
     val paymentDetail: String? = null, // JSON string or payment info
-    val amount: Int? = null,
+    val amount: Long? = null,
     val payUrl: String? = null
 )
 

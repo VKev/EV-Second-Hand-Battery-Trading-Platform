@@ -63,8 +63,8 @@ import java.util.Locale
 fun BatteryDetailScreen(
     batteryId: String,
     onBackClick: () -> Unit,
-    onBuyNow: (batteryId: String, batteryName: String, price: Int, image: String?) -> Unit,
-    viewModel: BatteryDetailViewModel = viewModel()
+    viewModel: BatteryDetailViewModel = (viewModel()),
+    onPaymentDashboard: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val currentBattery = state.battery
@@ -104,8 +104,8 @@ fun BatteryDetailScreen(
                 currentBattery != null -> {
                     BatteryDetailContent(
                         battery = currentBattery,
-                        onBuyNow = onBuyNow,
-                        modifier = Modifier.navigationBarsPadding()
+                        modifier = Modifier.navigationBarsPadding(),
+                        onPaymentDashboard = onPaymentDashboard
                     )
                 }
 
@@ -123,8 +123,8 @@ fun BatteryDetailScreen(
 @Composable
 private fun BatteryDetailContent(
     battery: Battery,
-    onBuyNow: (batteryId: String, batteryName: String, price: Int, image: String?) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onPaymentDashboard: () -> Unit
 ) {
     LazyColumn(
         modifier = modifier
@@ -173,7 +173,10 @@ private fun BatteryDetailContent(
         }
 
         item {
-            ActionButtonsRow(battery = battery, onBuyNow = onBuyNow)
+            ActionButtonsRow(
+                battery = battery,
+                onPaymentDashboard = onPaymentDashboard
+            )
         }
     }
 }
@@ -468,31 +471,21 @@ private fun DescriptionSection(description: String) {
 @Composable
 private fun ActionButtonsRow(
     battery: Battery?,
-    onBuyNow: (batteryId: String, batteryName: String, price: Int, image: String?) -> Unit
+    onPaymentDashboard: () -> Unit
 ) {
     val isAuctionItem = battery?.isAuction == true ||
         battery?.status?.contains("AUCTION", ignoreCase = true) == true
-    val primaryActionLabel = if (isAuctionItem) "dau gia" else "mua ngay"
+    val primaryActionLabel = if (isAuctionItem) "Dau gia" else "Mua ngay"
 
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Button(
-            onClick = {
-                battery?.let {
-                    onBuyNow(
-                        it.id,
-                        it.title,
-                        it.price,
-                        it.images.firstOrNull()
-                    )
-                }
-            },
+            onClick = onPaymentDashboard,
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-            enabled = battery != null
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
         ) {
             Text(
                 text = primaryActionLabel,
