@@ -76,13 +76,12 @@ sealed class BottomNavItem(val route: String, val title: String, val icon: Image
 fun AppNavigation(
     authViewModel: AuthViewModel,
     homeViewModel: HomeViewModel,
-    deepLinkFlow: Flow<Intent> // Thay đổi từ Uri sang Intent
+    deepLinkFlow: Flow<Intent> // Thêm tham số này
 ) {
     val navController = rememberNavController()
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
     val authState by authViewModel.authState.collectAsState()
 
-    // Nếu đang trao đổi code, coi như sắp đăng nhập, không nhảy về Login vội
     val startDestination = if (isLoggedIn || authState is AuthState.ExchangingCode) Screen.Home.route else Screen.Login.route
 
     // Lắng nghe sự kiện deep link từ MainActivity
@@ -97,7 +96,6 @@ fun AppNavigation(
                     authViewModel.exchangeAuthCodeForToken(code)
                 }
             } else if (data != null && data.scheme == "evmarket" && data.host == "app") {
-                // Xử lý các deep link khác như wallet
                 if (data.path == "/wallet") {
                     navController.navigate(Screen.Wallet.route) {
                         popUpTo(Screen.Home.route)
