@@ -60,6 +60,7 @@ import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun SellerCreateListingScreen(
@@ -111,6 +112,8 @@ fun SellerCreateListingScreen(
             ) {
                 Spacer(modifier = Modifier.height(4.dp))
 
+                ManageListingShortcut(onClick = onNavigateToDashboard)
+
                 AnimatedContent(
                     targetState = activeTab,
                     transitionSpec = {
@@ -130,6 +133,31 @@ fun SellerCreateListingScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun ManageListingShortcut(onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.5f)),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = PrimaryGreen
+        )
+    ) {
+        Icon(
+            imageVector = Icons.Default.Dashboard,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = "Quản lý tin đã đăng",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 
@@ -699,6 +727,17 @@ private fun VehicleForm(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                         )
                     }
+
+                    // Auction End Time Picker
+                    EnhancedDateTimePicker(
+                        label = "Thời gian kết thúc đấu giá",
+                        icon = Icons.Default.Schedule,
+                        displayValue = auctionEndsAtDisplay,
+                        onDateTimeSelected = { isoDateTime, displayText ->
+                            auctionEndsAt = isoDateTime
+                            auctionEndsAtDisplay = displayText
+                        }
+                    )
                 }
             }
         }
@@ -726,10 +765,15 @@ private fun VehicleForm(
             text = if (uiState.isSubmitting) "Đang đăng tải..." else "Đăng tin xe",
             isLoading = uiState.isSubmitting,
             onClick = {
+                val trimmedTitle = title.trim()
+                val trimmedDescription = description.trim()
+
                 val validationError = when {
-                    title.isBlank() || description.isBlank() || price.isBlank() ||
+                    trimmedTitle.isBlank() || trimmedDescription.isBlank() || price.isBlank() ||
                             brand.isBlank() || model.isBlank() || year.isBlank() ||
                             mileage.isBlank() -> "Vui lòng nhập đầy đủ thông tin bắt buộc."
+                    trimmedTitle.length < 5 -> "Tiêu đề cần tối thiểu 5 ký tự."
+                    trimmedDescription.length < 20 -> "Mô tả cần tối thiểu 20 ký tự."
                     selectedImages.isEmpty() -> "Vui lòng chọn ít nhất 1 ảnh."
                     year.toIntOrNull() == null || mileage.toLongOrNull() == null -> "Giá trị số không hợp lệ."
                     price.toLongOrNull()?.let { it < MIN_CURRENCY_VALUE } != false -> "Giá bán tối thiểu 1.000₫."
@@ -781,8 +825,8 @@ private fun VehicleForm(
                     )
 
                     val request = CreateVehicleRequest(
-                        title = title,
-                        description = description,
+                        title = trimmedTitle,
+                        description = trimmedDescription,
                         price = price.toLong(),
                         status = "AVAILABLE",
                         brand = brand,
@@ -924,10 +968,15 @@ private fun BatteryForm(
                 val capacityValue = capacity.toIntOrNull()
                 val yearValue = year.toIntOrNull()
                 val healthValue = health.toIntOrNull()
+                val trimmedTitle = title.trim()
+                val trimmedDescription = description.trim()
+
                 val validationError = when {
-                    title.isBlank() || description.isBlank() || price.isBlank() ||
+                    trimmedTitle.isBlank() || trimmedDescription.isBlank() || price.isBlank() ||
                             brand.isBlank() || capacity.isBlank() || year.isBlank() || health.isBlank() ->
                         "Vui lòng nhập đầy đủ thông tin bắt buộc."
+                    trimmedTitle.length < 5 -> "Tiêu đề cần tối thiểu 5 ký tự."
+                    trimmedDescription.length < 20 -> "Mô tả cần tối thiểu 20 ký tự."
                     selectedImages.isEmpty() -> "Vui lòng chọn ít nhất 1 ảnh."
                     priceValue == null || priceValue < MIN_CURRENCY_VALUE ->
                         "Giá bán tối thiểu 1.000₫."
@@ -940,8 +989,8 @@ private fun BatteryForm(
                 } else {
                     localError = null
                     val request = CreateBatteryRequest(
-                        title = title,
-                        description = description,
+                        title = trimmedTitle,
+                        description = trimmedDescription,
                         price = priceValue!!,
                         status = "AVAILABLE",
                         brand = brand,
@@ -1555,6 +1604,80 @@ private const val MIN_CURRENCY_VALUE = 1_000L
 private fun digitsOnly(input: String, maxLength: Int? = null): String {
     val filtered = input.filter { it.isDigit() }
     return maxLength?.let { filtered.take(it) } ?: filtered
+}
+
+@Composable
+private fun EnhancedDateTimePicker(
+    label: String,
+    icon: ImageVector,
+    displayValue: String,
+    onDateTimeSelected: (isoDateTime: String, displayText: String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val zoneId = ZoneId.systemDefault()
+    val displayFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale("vi", "VN"))
+    
+    OutlinedCard(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+    ) {
+        Surface(
+            onClick = {
+                openAuctionPicker(context, zoneId, displayFormatter, onDateTimeSelected)
+            },
+            color = Color.Transparent,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Text(
+                        text = displayValue.ifBlank { "Chọn thời gian" },
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (displayValue.isBlank()) {
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                        fontWeight = if (displayValue.isBlank()) FontWeight.Normal else FontWeight.Medium
+                    )
+                }
+                
+                Icon(
+                    imageVector = Icons.Default.DateRange,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
 }
 
 private fun openAuctionPicker(

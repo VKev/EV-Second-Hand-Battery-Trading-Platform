@@ -95,3 +95,8 @@ data class AuctionDetailData(
 data class BidRequest(
     val amount: Int
 )
+
+@Serializable
+data class AuctionDepositRequest(
+    val amount: Int
+)

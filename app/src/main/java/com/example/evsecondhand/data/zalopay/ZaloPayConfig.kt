@@ -12,5 +12,9 @@ object ZaloPayConfig {
     // Deep link for returning user to app after payment
     const val DEEP_LINK = "evmarket://app"
     
+    // Deep link redirect URLs for MoMo payments
+    const val WALLET_DEPOSIT_REDIRECT = "evmarket://app"
+    const val CHECKOUT_REDIRECT = "evmarket://app"
+    
     const val BANK_CODE = "zalopayapp"
 }

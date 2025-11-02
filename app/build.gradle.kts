@@ -79,7 +79,7 @@ dependencies {
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.kotlinx.serialization.json)
     
-    // ZaloPay
+
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("commons-codec:commons-codec:1.15")
     implementation(fileTree(mapOf("dir" to "C:\\Vkev\\Study\\PRM\\Dependencies", "include" to listOf("*.aar", "*.jar"))))
@@ -105,3 +105,4 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
+
