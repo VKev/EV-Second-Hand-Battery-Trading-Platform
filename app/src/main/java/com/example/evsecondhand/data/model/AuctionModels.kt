@@ -6,6 +6,16 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 
 @Serializable
+data class BidRequest(
+    val amount: Int
+)
+
+@Serializable
+data class AuctionDepositRequest(
+    val amount: Int
+)
+
+@Serializable
 data class AuctionStatusResponse(
     val message: String? = null,
     val data: AuctionStatusData? = null
@@ -124,12 +134,6 @@ data class AuctionDetailData(
     @SerialName("batterySpecifications")
     val batterySpecifications: BatterySpecifications? = null
 )
-
-@Serializable
-data class BidRequest(
-    val amount: Int
-)
-
 @Serializable
 data class AuctionBid(
     @SerialName("id")

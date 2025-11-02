@@ -76,14 +76,6 @@ sealed class BottomNavItem(
 
 private const val WALLET_DEEP_LINK_RESULT_KEY = "wallet_deep_link_result"
 
-sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
-    object Home : BottomNavItem(Screen.Home.route, "Trang chủ", Icons.Default.Home)
-    object Auctions : BottomNavItem(Screen.Auctions.route, "Đấu giá", Icons.Default.Gavel)
-    object AddPost : BottomNavItem(Screen.AddPost.route, "Đăng tin", Icons.Default.Add)
-    object Wallet : BottomNavItem(Screen.Wallet.route, "Ví", Icons.Default.Wallet)
-    object Profile : BottomNavItem(Screen.Profile.route, "Hồ sơ", Icons.Default.Person)
-}
-
 @Composable
 fun AppNavigation(
     authViewModel: AuthViewModel,
