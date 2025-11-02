@@ -235,7 +235,7 @@ private fun VehicleDetailContent(
 }
 
 @Composable
-private fun VehicleGalleryCard(
+public fun VehicleGalleryCard(
     images: List<String>,
     isVerified: Boolean
 ) {
@@ -349,7 +349,7 @@ private fun GalleryThumbnail(
 }
 
 @Composable
-private fun VerifiedBadge(modifier: Modifier = Modifier) {
+public fun VerifiedBadge(modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier,
         color = PrimaryGreen.copy(alpha = 0.12f),
@@ -377,7 +377,7 @@ private fun VerifiedBadge(modifier: Modifier = Modifier) {
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
-private fun VehicleOverviewCard(vehicle: Vehicle) {
+public fun VehicleOverviewCard(vehicle: Vehicle) {
     val mileageFormatter = NumberFormat.getInstance(Locale.US)
 
     Card(
@@ -436,7 +436,7 @@ private fun InfoChip(label: String, value: String?) {
 }
 
 @Composable
-private fun QuickHighlightsSection(vehicle: Vehicle) {
+public fun QuickHighlightsSection(vehicle: Vehicle) {
     val range = vehicle.specifications?.batteryAndCharging?.range ?: "--"
     val topSpeed = vehicle.specifications?.performance?.topSpeed ?: "--"
     val acceleration = vehicle.specifications?.performance?.acceleration ?: "--"
@@ -472,7 +472,7 @@ private fun QuickHighlightsSection(vehicle: Vehicle) {
 }
 
 @Composable
-private fun HighlightStatCard(
+public fun HighlightStatCard(
     label: String,
     value: String,
     modifier: Modifier = Modifier
@@ -565,7 +565,7 @@ private fun AuctionSummaryCard(vehicle: Vehicle) {
 }
 
 @Composable
-private fun AuctionCountdownBadge(remaining: String) {
+public fun AuctionCountdownBadge(remaining: String) {
     Surface(
         color = Color(0xFFFFF3C2),
         border = BorderStroke(1.dp, Color(0xFFFFDD85)),
@@ -767,7 +767,7 @@ private fun PurchaseShortcutCard(price: Int) {
 }
 
 @Composable
-private fun SpecificationSection(specs: VehicleSpecifications) {
+public fun SpecificationSection(specs: VehicleSpecifications) {
     Card(
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -916,7 +916,7 @@ private fun SellerContactSection(seller: Seller) {
 }
 
 @Composable
-private fun DescriptionSection(description: String) {
+public fun DescriptionSection(description: String) {
     Card(
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),

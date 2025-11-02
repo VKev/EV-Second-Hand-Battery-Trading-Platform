@@ -929,7 +929,8 @@ private fun AuctionScreenPreview() {
         seller = Seller(
             id = "seller-1",
             name = "Sentry EV",
-            avatar = null
+            avatar = null,
+            isVerified = true
         )
     )
 

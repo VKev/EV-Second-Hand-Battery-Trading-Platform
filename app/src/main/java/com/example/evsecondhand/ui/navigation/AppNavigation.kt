@@ -65,11 +65,11 @@ sealed class BottomNavItem(
     val title: String,
     val icon: ImageVector
 ) {
-    object Home : BottomNavItem(Screen.Home.route, "Trang \u1EE7", Icons.Default.Home)
-    object Auctions : BottomNavItem(Screen.Auctions.route, "\u0110\u1EA5u gi\u00E1", Icons.Default.Gavel)
-    object AddPost : BottomNavItem(Screen.AddPost.route, "\u0110\u0103ng tin", Icons.Default.Add)
-    object Wallet : BottomNavItem(Screen.Wallet.route, "V\u00ED", Icons.Default.Wallet)
-    object Profile : BottomNavItem(Screen.Profile.route, "H\u1ED3 s\u01A1", Icons.Default.Person)
+    object Home : BottomNavItem(Screen.Home.route, "Trang chủ", Icons.Default.Home)
+    object Auctions : BottomNavItem(Screen.Auctions.route, "Đấu giá", Icons.Default.Gavel)
+    object AddPost : BottomNavItem(Screen.AddPost.route, "Đăng tin", Icons.Default.Add)
+    object Wallet : BottomNavItem(Screen.Wallet.route, "Ví", Icons.Default.Wallet)
+    object Profile : BottomNavItem(Screen.Profile.route, "Hồ sơ", Icons.Default.Person)
 }
 
 private const val WALLET_DEEP_LINK_RESULT_KEY = "wallet_deep_link_uri"
@@ -248,9 +248,11 @@ fun AppNavigation(
 
             composable(Screen.Auctions.route) {
                 AuctionsScreen(onAuctionClick = { summary ->
-                    if (summary.listingId.isNotBlank()) {
+                    val targetListingType = summary.listingType.ifBlank { "vehicle" }
+                    val targetListingId = summary.listingId.ifBlank { summary.id.orEmpty() }
+                    if (targetListingId.isNotBlank()) {
                         navController.navigate(
-                            Screen.AuctionDetail.createRoute(summary.listingType, summary.listingId)
+                            Screen.AuctionDetail.createRoute(targetListingType, targetListingId)
                         )
                     }
                 })

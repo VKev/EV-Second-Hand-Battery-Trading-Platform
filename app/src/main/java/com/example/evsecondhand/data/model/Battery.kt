@@ -60,7 +60,8 @@ data class BatterySpecifications(
 data class Seller(
     val id: String,
     val name: String,
-    val avatar: String? = null
+    val avatar: String? = null,
+    val isVerified: Boolean = false
 )
 
 @Serializable
