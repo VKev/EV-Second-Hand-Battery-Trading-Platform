@@ -1,6 +1,7 @@
 ﻿package com.example.evsecondhand.ui.navigation
 
 import android.app.Application
+import android.content.Intent
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -33,6 +34,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navDeepLink
 import androidx.navigation.navArgument
 import com.example.evsecondhand.ui.screen.ProfileScreen
 import com.example.evsecondhand.ui.screen.WalletScreen
@@ -53,6 +55,8 @@ import com.example.evsecondhand.ui.viewmodel.HomeViewModel
 import com.example.evsecondhand.ui.viewmodel.PaymentViewModel
 import com.example.evsecondhand.ui.viewmodel.SellerCreateListingViewModel
 import com.example.evsecondhand.ui.viewmodel.SellerDashboardViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
 
 sealed class BottomNavItem(
     val route: String,
@@ -69,9 +73,38 @@ sealed class BottomNavItem(
 @Composable
 fun AppNavigation(
     authViewModel: AuthViewModel,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    deepLinkFlow: Flow<Intent>? = null
 ) {
     val navController = rememberNavController()
+    LaunchedEffect(deepLinkFlow) {
+        deepLinkFlow?.let { flow ->
+            flow.collectLatest { intent ->
+                val handled = navController.handleDeepLink(intent)
+                android.util.Log.d(
+                    "AppNavigation",
+                    "Deep link intent received: ${intent.dataString}, handledByNav=$handled"
+                )
+                if (!handled) {
+                    val host = intent.data?.host?.lowercase()
+                    when (host) {
+                        "wallet" -> navController.navigate(Screen.Wallet.route) {
+                            launchSingleTop = true
+                        }
+                        "app" -> navController.navigate(Screen.Home.route) {
+                            launchSingleTop = true
+                        }
+                        else -> {
+                            android.util.Log.w(
+                                "AppNavigation",
+                                "Unhandled deep link host=$host, keeping current destination"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
     val startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route
 
@@ -123,7 +156,10 @@ fun AppNavigation(
                 )
             }
 
-            composable(Screen.Home.route) {
+            composable(
+                Screen.Home.route,
+                deepLinks = listOf(navDeepLink { uriPattern = "evmarket://app" })
+            ) {
                 HomeScreen(
                     homeViewModel = homeViewModel,
                     onBatteryClick = { batteryId ->
@@ -337,7 +373,10 @@ fun AppNavigation(
                 )
             }
 
-            composable(Screen.Wallet.route) {
+            composable(
+                Screen.Wallet.route,
+                deepLinks = listOf(navDeepLink { uriPattern = "evmarket://wallet" })
+            ) {
                 WalletScreen()
             }
 

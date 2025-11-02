@@ -6,6 +6,7 @@ import com.example.evsecondhand.data.model.Transaction
 import com.example.evsecondhand.data.model.WalletBalance
 import com.example.evsecondhand.data.model.WithdrawRequest
 import com.example.evsecondhand.data.remote.CheckoutApiService
+import com.example.evsecondhand.data.zalopay.ZaloPayConfig
 
 class PaymentRepository(
     private val api: CheckoutApiService,
@@ -24,7 +25,7 @@ class PaymentRepository(
     }
 
     suspend fun submitWithdraw(amount: Long): Result<String?> = runCatching {
-    api.requestWithdraw(authHeader(), WithdrawRequest(amount)).message
+        api.requestWithdraw(authHeader(), WithdrawRequest(amount)).message
     }
 
     suspend fun initiateCheckout(
@@ -32,10 +33,17 @@ class PaymentRepository(
         listingType: String,
         paymentMethod: String
     ): Result<CheckoutResponse> = runCatching {
+        val redirectUrl = if (paymentMethod.equals("MOMO", ignoreCase = true)) {
+            ZaloPayConfig.CHECKOUT_REDIRECT
+        } else {
+            null
+        }
+
         val request = CheckoutRequest(
             listingId = listingId,
             listingType = listingType,
-            paymentMethod = paymentMethod
+            paymentMethod = paymentMethod,
+            redirectUrl = redirectUrl
         )
 
         if (paymentMethod == "WALLET") {
