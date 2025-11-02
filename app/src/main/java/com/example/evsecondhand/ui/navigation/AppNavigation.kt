@@ -3,6 +3,7 @@
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -35,8 +36,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navDeepLink
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.example.evsecondhand.ui.screen.ProfileScreen
 import com.example.evsecondhand.ui.screen.PurchaseHistoryScreen
 import com.example.evsecondhand.ui.screen.WalletScreen
@@ -61,66 +62,50 @@ import com.example.evsecondhand.ui.viewmodel.SellerDashboardViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 
-sealed class BottomNavItem(
-    val route: String,
-    val title: String,
-    val icon: ImageVector
-) {
-    object Home : BottomNavItem(Screen.Home.route, "Trang \u1EE7", Icons.Default.Home)
-    object Auctions : BottomNavItem(Screen.Auctions.route, "\u0110\u1EA5u gi\u00E1", Icons.Default.Gavel)
-    object AddPost : BottomNavItem(Screen.AddPost.route, "\u0110\u0103ng tin", Icons.Default.Add)
-    object Wallet : BottomNavItem(Screen.Wallet.route, "V\u00ED", Icons.Default.Wallet)
-    object Profile : BottomNavItem(Screen.Profile.route, "H\u1ED3 s\u01A1", Icons.Default.Person)
-}
+private const val WALLET_DEEP_LINK_RESULT_KEY = "wallet_deep_link_result"
 
-private const val WALLET_DEEP_LINK_RESULT_KEY = "wallet_deep_link_uri"
+sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
+    object Home : BottomNavItem(Screen.Home.route, "Trang chủ", Icons.Default.Home)
+    object Auctions : BottomNavItem(Screen.Auctions.route, "Đấu giá", Icons.Default.Gavel)
+    object AddPost : BottomNavItem(Screen.AddPost.route, "Đăng tin", Icons.Default.Add)
+    object Wallet : BottomNavItem(Screen.Wallet.route, "Ví", Icons.Default.Wallet)
+    object Profile : BottomNavItem(Screen.Profile.route, "Hồ sơ", Icons.Default.Person)
+}
 
 @Composable
 fun AppNavigation(
     authViewModel: AuthViewModel,
     homeViewModel: HomeViewModel,
-    deepLinkFlow: Flow<Intent>? = null
+    deepLinkFlow: Flow<Intent> // Thay đổi từ Uri sang Intent
 ) {
     val navController = rememberNavController()
-    LaunchedEffect(deepLinkFlow) {
-        deepLinkFlow?.let { flow ->
-            flow.collectLatest { intent ->
-                val uri = intent.data
-                val handledByCustom = uri?.let { data ->
-                    handleWalletDeepLink(navController, data)
-                } ?: false
-
-                if (handledByCustom) {
-                    android.util.Log.d(
-                        "AppNavigation",
-                        "Handled wallet deep link from intent: ${intent.dataString}"
-                    )
-                    return@collectLatest
-                }
-
-                val handledByNav = navController.handleDeepLink(intent)
-                android.util.Log.d(
-                    "AppNavigation",
-                    "Deep link intent received: ${intent.dataString}, handledByNav=$handledByNav"
-                )
-
-                if (!handledByNav) {
-                    val fallbackHandled = handleGenericDeepLink(navController, uri)
-                    if (!fallbackHandled) {
-                        android.util.Log.w(
-                            "AppNavigation",
-                            "Unhandled deep link data=${intent.dataString}"
-                        )
-                    }
-                }
-            }
-        }
-    }
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
     val authState by authViewModel.authState.collectAsState()
 
     // Nếu đang trao đổi code, coi như sắp đăng nhập, không nhảy về Login vội
     val startDestination = if (isLoggedIn || authState is AuthState.ExchangingCode) Screen.Home.route else Screen.Login.route
+
+    // Lắng nghe sự kiện deep link từ MainActivity
+    LaunchedEffect(Unit) {
+        deepLinkFlow.collectLatest { intent ->
+            val data = intent.data
+            Log.d("AppNavigation", "Received deep link in Nav: $data")
+            if (data != null && data.scheme == "evmarket" && data.host == "auth-callback") {
+                val code = data.getQueryParameter("code")
+                if (!code.isNullOrBlank()) {
+                    Log.d("AppNavigation", "Handling auth code: $code")
+                    authViewModel.exchangeAuthCodeForToken(code)
+                }
+            } else if (data != null && data.scheme == "evmarket" && data.host == "app") {
+                // Xử lý các deep link khác như wallet
+                if (data.path == "/wallet") {
+                    navController.navigate(Screen.Wallet.route) {
+                        popUpTo(Screen.Home.route)
+                    }
+                }
+            }
+        }
+    }
 
     LaunchedEffect(isLoggedIn, authState) {
         // Chỉ điều hướng về Login nếu thực sự đã logout và không đang xử lý gì cả
