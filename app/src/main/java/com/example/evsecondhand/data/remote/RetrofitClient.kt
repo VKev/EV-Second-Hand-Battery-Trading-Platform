@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     
-    private const val BASE_URL = "https://beevmarket-production.up.railway.app/api/v1/"
+    private const val BASE_URL = "https://evmarket-api-staging-backup.onrender.com/api/v1/"
     
     private val json = Json {
         ignoreUnknownKeys = true
@@ -47,14 +47,26 @@ object RetrofitClient {
 
     private val authInterceptor = Interceptor { chain ->
         val originalRequest = chain.request()
-        val token = cachedToken ?: tokenProvider?.invoke()
-        val authorisedRequest = if (!token.isNullOrBlank()) {
+
+        val token = (cachedToken ?: tokenProvider?.invoke())
+            ?.takeUnless { it.isNullOrBlank() }
+
+        if (cachedToken == null && token != null) {
+            cachedToken = token
+        }
+
+        val existingAuthHeader = originalRequest.header("Authorization")
+        // Respect manually supplied Authorization headers to avoid duplicates
+        val shouldAttachHeader = token != null && existingAuthHeader.isNullOrBlank()
+
+        val authorisedRequest = if (shouldAttachHeader) {
             originalRequest.newBuilder()
-                .addHeader("Authorization", "Bearer $token")
+                .header("Authorization", "Bearer $token")
                 .build()
         } else {
             originalRequest
         }
+
         chain.proceed(authorisedRequest)
     }
     

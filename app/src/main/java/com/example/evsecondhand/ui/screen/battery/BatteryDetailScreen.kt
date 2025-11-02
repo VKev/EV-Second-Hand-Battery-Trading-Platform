@@ -205,7 +205,8 @@ private fun BatteryDetailContent(
         item {
             ActionButtonsRow(
                 battery = battery,
-                onPaymentDashboard = onPaymentDashboard
+                onPaymentDashboard = onPaymentDashboard,
+                onBidClick = onBidClick
             )
         }
     }
@@ -592,11 +593,11 @@ private fun DescriptionSection(description: String) {
 @Composable
 private fun ActionButtonsRow(
     battery: Battery?,
-    onPaymentDashboard: (Battery) -> Unit
+    onPaymentDashboard: (Battery) -> Unit,
+    onBidClick: () -> Unit
 ) {
     val isAuctionItem = battery?.isAuction == true ||
         battery?.status?.contains("AUCTION", ignoreCase = true) == true
-    val primaryActionLabel = if (isAuctionItem) "Dau gia" else "Mua ngay"
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -611,12 +612,26 @@ private fun ActionButtonsRow(
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
         ) {
             Text(
-                text = primaryActionLabel,
+                text = "Mua ngay",
                 style = MaterialTheme.typography.labelLarge.copy(
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
             )
+        }
+
+        if (isAuctionItem) {
+            OutlinedButton(
+                onClick = onBidClick,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryGreen)
+            ) {
+                Text(
+                    text = "Đấu giá",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                )
+            }
         }
 
         OutlinedButton(

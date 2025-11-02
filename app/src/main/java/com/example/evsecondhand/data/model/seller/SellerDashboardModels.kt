@@ -39,7 +39,8 @@ data class BatteryListResponse(
 
 @Serializable
 data class BatteryListWrapper(
-    val results: List<BatteryItem> = emptyList()
+    @SerialName("batteries")
+    val batteries: List<BatteryItem> = emptyList()
 )
 
 @Serializable

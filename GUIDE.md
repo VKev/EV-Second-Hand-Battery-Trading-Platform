@@ -149,7 +149,7 @@ fun refresh()
 
 ### Base URL
 ```
-https://evmarket-api-staging.onrender.com/api/v1/
+https://evmarket-api-staging-backup.onrender.com/api/v1/
 ```
 
 ### Endpoints được sử dụng

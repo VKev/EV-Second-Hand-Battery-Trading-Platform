@@ -140,13 +140,14 @@ class CheckoutViewModel(application: Application) : AndroidViewModel(application
             val result = repository.checkout(
                 listingId = currentState.listingId,
                 listingType = currentState.listingType,
-                paymentMethod = currentState.selectedPaymentMethod.value
+                paymentMethod = currentState.selectedPaymentMethod.value,
+                redirectUrl = com.example.evsecondhand.data.zalopay.ZaloPayConfig.CHECKOUT_REDIRECT
             )
             
             result.onSuccess { response ->
                 Log.d(TAG, "Checkout successful: ${response.message}")
                 
-                // Both WALLET and ZaloPay - immediate success
+                // Both WALLET and MoMo - immediate success
                 // Backend will process transaction asynchronously
                 _uiState.value = currentState.copy(
                     checkoutState = CheckoutState.Success(response)
@@ -192,7 +193,7 @@ class CheckoutViewModel(application: Application) : AndroidViewModel(application
         val currentState = _uiState.value
         return when (currentState.selectedPaymentMethod) {
             PaymentMethod.WALLET -> currentState.walletBalance >= currentState.listingPrice
-            PaymentMethod.ZALOPAY -> true // ZaloPay luôn cho phép proceed
+            PaymentMethod.MOMO -> true // MoMo luôn cho phép proceed
         }
     }
 }

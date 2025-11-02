@@ -1,5 +1,6 @@
-package com.example.evsecondhand.ui.navigation
+﻿package com.example.evsecondhand.ui.navigation
 
+import android.app.Application
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -19,10 +20,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -30,7 +34,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.evsecondhand.ui.screen.AddPostScreen
 import com.example.evsecondhand.ui.screen.ProfileScreen
 import com.example.evsecondhand.ui.screen.WalletScreen
 import com.example.evsecondhand.ui.screen.auction.AuctionScreen
@@ -40,21 +43,27 @@ import com.example.evsecondhand.ui.screen.auth.LoginScreen
 import com.example.evsecondhand.ui.screen.auth.RegisterScreen
 import com.example.evsecondhand.ui.screen.battery.BatteryDetailScreen
 import com.example.evsecondhand.ui.screen.home.HomeScreen
+import com.example.evsecondhand.ui.screen.payment.PaymentDashboardScreen
+import com.example.evsecondhand.ui.screen.seller.SellerCreateListingScreen
+import com.example.evsecondhand.ui.screen.seller.SellerDashboardScreen
 import com.example.evsecondhand.ui.screen.vehicle.VehicleDetailScreen
 import com.example.evsecondhand.ui.theme.PrimaryGreen
 import com.example.evsecondhand.ui.viewmodel.AuthViewModel
 import com.example.evsecondhand.ui.viewmodel.HomeViewModel
+import com.example.evsecondhand.ui.viewmodel.PaymentViewModel
+import com.example.evsecondhand.ui.viewmodel.SellerCreateListingViewModel
+import com.example.evsecondhand.ui.viewmodel.SellerDashboardViewModel
 
 sealed class BottomNavItem(
     val route: String,
     val title: String,
     val icon: ImageVector
 ) {
-    object Home : BottomNavItem(Screen.Home.route, "Trang chủ", Icons.Default.Home)
-    object Auctions : BottomNavItem(Screen.Auctions.route, "Đấu giá", Icons.Default.Gavel)
-    object AddPost : BottomNavItem(Screen.AddPost.route, "Đăng tin", Icons.Default.Add)
-    object Wallet : BottomNavItem(Screen.Wallet.route, "Ví", Icons.Default.Wallet)
-    object Profile : BottomNavItem(Screen.Profile.route, "Hồ sơ", Icons.Default.Person)
+    object Home : BottomNavItem(Screen.Home.route, "Trang \u1EE7", Icons.Default.Home)
+    object Auctions : BottomNavItem(Screen.Auctions.route, "\u0110\u1EA5u gi\u00E1", Icons.Default.Gavel)
+    object AddPost : BottomNavItem(Screen.AddPost.route, "\u0110\u0103ng tin", Icons.Default.Add)
+    object Wallet : BottomNavItem(Screen.Wallet.route, "V\u00ED", Icons.Default.Wallet)
+    object Profile : BottomNavItem(Screen.Profile.route, "H\u1ED3 s\u01A1", Icons.Default.Person)
 }
 
 @Composable
@@ -222,7 +231,110 @@ fun AppNavigation(
             }
 
             composable(Screen.AddPost.route) {
-                AddPostScreen()
+                val accessToken = authViewModel.getAccessToken()
+                if (accessToken.isNullOrBlank()) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        }
+                    }
+                    return@composable
+                }
+
+                val application = LocalContext.current.applicationContext as Application
+                val factory = remember(accessToken) {
+                    SellerCreateListingViewModel.provideFactory(application, accessToken)
+                }
+                val viewModel: SellerCreateListingViewModel = viewModel(factory = factory)
+
+                SellerCreateListingScreen(
+                    viewModel = viewModel,
+                    onBackClick = { navController.popBackStack() },
+                    onNavigateToDashboard = {
+                        navController.navigate(Screen.SellerDashboard.route) {
+                            popUpTo(Screen.Home.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
+            }
+
+            composable(Screen.SellerDashboard.route) {
+                val accessToken = authViewModel.getAccessToken()
+                if (accessToken.isNullOrBlank()) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        }
+                    }
+                    return@composable
+                }
+
+                val factory = remember(accessToken) {
+                    SellerDashboardViewModel.provideFactory(accessToken)
+                }
+                val viewModel: SellerDashboardViewModel = viewModel(factory = factory)
+
+                SellerDashboardScreen(
+                    viewModel = viewModel,
+                    onBatteryClick = { batteryId ->
+                        navController.navigate(Screen.BatteryDetail.createRoute(batteryId))
+                    },
+                    onBackClick = { navController.popBackStack() },
+                    onAddListingClick = {
+                        navController.navigate(Screen.AddPost.route) {
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
+
+            composable(
+                route = "${Screen.Payment.route}?${Screen.Payment.ARG_ITEM_TYPE}={${Screen.Payment.ARG_ITEM_TYPE}}&${Screen.Payment.ARG_ITEM_ID}={${Screen.Payment.ARG_ITEM_ID}}",
+                arguments = listOf(
+                    navArgument(Screen.Payment.ARG_ITEM_TYPE) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument(Screen.Payment.ARG_ITEM_ID) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val accessToken = authViewModel.getAccessToken()
+                if (accessToken.isNullOrBlank()) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        }
+                    }
+                    return@composable
+                }
+
+                val factory = remember(accessToken) {
+                    PaymentViewModel.provideFactory(accessToken)
+                }
+                val paymentViewModel: PaymentViewModel = viewModel(factory = factory)
+
+                val itemType = backStackEntry.arguments?.getString(Screen.Payment.ARG_ITEM_TYPE)
+                val itemId = backStackEntry.arguments?.getString(Screen.Payment.ARG_ITEM_ID)
+
+                PaymentDashboardScreen(
+                    viewModel = paymentViewModel,
+                    productType = itemType,
+                    productId = itemId,
+                    onBackClick = { navController.popBackStack() },
+                    onPaymentSuccess = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Home.route) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    }
+                )
             }
 
             composable(Screen.Wallet.route) {
@@ -240,7 +352,20 @@ fun AppNavigation(
 fun shouldShowBottomBar(navController: NavHostController): Boolean {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    return currentRoute !in listOf(Screen.Login.route, Screen.Register.route)
+    if (currentRoute == null) {
+        return true
+    }
+
+    if (currentRoute.startsWith(Screen.Payment.route)) {
+        return false
+    }
+
+    return currentRoute !in listOf(
+        Screen.Login.route,
+        Screen.Register.route,
+        Screen.AddPost.route,
+        Screen.SellerDashboard.route
+    )
 }
 
 @Composable
@@ -273,12 +398,23 @@ fun BottomNavigationBar(
     ) {
         items.forEach { item ->
             val selected = currentRoute == item.route
+            val navigateToItem: () -> Unit = {
+                if (currentRoute != item.route) {
+                    navController.navigate(item.route) {
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            }
 
             NavigationBarItem(
                 icon = {
                     if (item == BottomNavItem.AddPost) {
                         FloatingActionButton(
-                            onClick = { navController.navigate(item.route) },
+                            onClick = navigateToItem,
                             containerColor = PrimaryGreen,
                             modifier = Modifier.size(56.dp)
                         ) {
@@ -301,17 +437,7 @@ fun BottomNavigationBar(
                     { Text(item.title) }
                 } else null,
                 selected = selected,
-                onClick = {
-                    if (currentRoute != item.route) {
-                        navController.navigate(item.route) {
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                },
+                onClick = navigateToItem,
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = PrimaryGreen,
                     selectedTextColor = PrimaryGreen,
@@ -323,3 +449,4 @@ fun BottomNavigationBar(
         }
     }
 }
+

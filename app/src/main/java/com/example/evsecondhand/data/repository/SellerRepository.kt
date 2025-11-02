@@ -9,6 +9,11 @@ import com.example.evsecondhand.data.model.seller.CreateVehicleRequest
 import com.example.evsecondhand.data.model.seller.UpdateBatteryRequest
 import com.example.evsecondhand.data.model.seller.VehicleItem
 import com.example.evsecondhand.data.remote.SellerApiService
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -19,6 +24,12 @@ class SellerRepository(
     private val accessToken: String
 ) {
 
+    private val json = Json {
+        encodeDefaults = false
+        ignoreUnknownKeys = true
+        explicitNulls = false
+    }
+
     private fun authHeader(): String = "Bearer $accessToken"
 
     suspend fun fetchVehicles(): Result<List<VehicleItem>> = runCatching {
@@ -26,7 +37,7 @@ class SellerRepository(
     }
 
     suspend fun fetchBatteries(): Result<List<BatteryItem>> = runCatching {
-        api.getMyBatteries(authHeader()).data.results
+        api.getMyBatteries(authHeader()).data.batteries
     }
 
     suspend fun fetchBatteryDetail(id: String): Result<BatteryItemFull> = runCatching {
@@ -127,21 +138,32 @@ class SellerRepository(
         bidIncrement?.let { map["bidIncrement"] = it.toTextBody() }
         depositAmount?.let { map["depositAmount"] = it.toTextBody() }
         specifications?.let { specs ->
-            specs.warranty?.basic?.let { map["specifications[warranty][basic]"] = it.toTextBody() }
-            specs.warranty?.battery?.let { map["specifications[warranty][battery]"] = it.toTextBody() }
-            specs.warranty?.drivetrain?.let { map["specifications[warranty][drivetrain]"] = it.toTextBody() }
-            specs.dimensions?.width?.let { map["specifications[dimensions][width]"] = it.toTextBody() }
-            specs.dimensions?.height?.let { map["specifications[dimensions][height]"] = it.toTextBody() }
-            specs.dimensions?.length?.let { map["specifications[dimensions][length]"] = it.toTextBody() }
-            specs.dimensions?.curbWeight?.let { map["specifications[dimensions][curbWeight]"] = it.toTextBody() }
-            specs.performance?.topSpeed?.let { map["specifications[performance][topSpeed]"] = it.toTextBody() }
-            specs.performance?.motorType?.let { map["specifications[performance][motorType]"] = it.toTextBody() }
-            specs.performance?.horsepower?.let { map["specifications[performance][horsepower]"] = it.toTextBody() }
-            specs.performance?.acceleration?.let { map["specifications[performance][acceleration]"] = it.toTextBody() }
-            specs.batteryAndCharging?.range?.let { map["specifications[batteryAndCharging][range]"] = it.toTextBody() }
-            specs.batteryAndCharging?.chargeTime?.let { map["specifications[batteryAndCharging][chargeTime]"] = it.toTextBody() }
-            specs.batteryAndCharging?.chargingSpeed?.let { map["specifications[batteryAndCharging][chargingSpeed]"] = it.toTextBody() }
-            specs.batteryAndCharging?.batteryCapacity?.let { map["specifications[batteryAndCharging][batteryCapacity]"] = it.toTextBody() }
+            val specJson = buildJsonObject {
+                putJsonObject("warranty") {
+                    specs.warranty?.basic?.let { put("basic", it) }
+                    specs.warranty?.battery?.let { put("battery", it) }
+                    specs.warranty?.drivetrain?.let { put("drivetrain", it) }
+                }
+                putJsonObject("dimensions") {
+                    specs.dimensions?.width?.let { put("width", it) }
+                    specs.dimensions?.height?.let { put("height", it) }
+                    specs.dimensions?.length?.let { put("length", it) }
+                    specs.dimensions?.curbWeight?.let { put("curbWeight", it) }
+                }
+                putJsonObject("performance") {
+                    specs.performance?.topSpeed?.let { put("topSpeed", it) }
+                    specs.performance?.motorType?.let { put("motorType", it) }
+                    specs.performance?.horsepower?.let { put("horsepower", it) }
+                    specs.performance?.acceleration?.let { put("acceleration", it) }
+                }
+                putJsonObject("batteryAndCharging") {
+                    specs.batteryAndCharging?.range?.let { put("range", it) }
+                    specs.batteryAndCharging?.chargeTime?.let { put("chargeTime", it) }
+                    specs.batteryAndCharging?.chargingSpeed?.let { put("chargingSpeed", it) }
+                    specs.batteryAndCharging?.batteryCapacity?.let { put("batteryCapacity", it) }
+                }
+            }
+            map["specifications"] = specJson.toString().toTextBody()
         }
         return map
     }
@@ -161,14 +183,7 @@ class SellerRepository(
         bidIncrement?.let { map["bidIncrement"] = it.toTextBody() }
         depositAmount?.let { map["depositAmount"] = it.toTextBody() }
         specifications?.let { specs ->
-            specs.weight?.let { map["specifications[weight]"] = it.toTextBody() }
-            specs.voltage?.let { map["specifications[voltage]"] = it.toTextBody() }
-            specs.chemistry?.let { map["specifications[chemistry]"] = it.toTextBody() }
-            specs.degradation?.let { map["specifications[degradation]"] = it.toTextBody() }
-            specs.chargingTime?.let { map["specifications[chargingTime]"] = it.toTextBody() }
-            specs.installation?.let { map["specifications[installation]"] = it.toTextBody() }
-            specs.warrantyPeriod?.let { map["specifications[warrantyPeriod]"] = it.toTextBody() }
-            specs.temperatureRange?.let { map["specifications[temperatureRange]"] = it.toTextBody() }
+            map["specifications"] = json.encodeToString(specs).toTextBody()
         }
         return map
     }
