@@ -69,12 +69,12 @@ fun AuctionsScreen(
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Dau gia dang dien ra",
+                    text = "Đấu giá đang diễn ra",
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                     color = PrimaryGreen
                 )
                 Text(
-                    text = "Kham pha cac phien dau gia pin va xe dien theo thoi gian thuc.",
+                    text = "Khám phá các phiên đấu giá pin và xe điện theo thời gian thực.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextSecondary
                 )
@@ -101,7 +101,7 @@ fun AuctionsScreen(
                 state.pastAuctions.isEmpty() -> {
                 item {
                     AuctionErrorCard(
-                        message = state.error ?: "Unknown error",
+                        message = state.error ?: "Lỗi không xác định",
                         onRetry = { viewModel.retry() }
                     )
                 }
@@ -112,7 +112,7 @@ fun AuctionsScreen(
                 state.pastAuctions.isEmpty() -> {
                 item {
                     Text(
-                        text = "Chua co phien dau gia nao.",
+                        text = "Chưa có phiên đấu giá nào.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextSecondary
                     )
@@ -122,18 +122,18 @@ fun AuctionsScreen(
             else -> {
                 val sections = listOf(
                     AuctionSectionConfig(
-                        title = "Dang dau gia",
-                        emptyMessage = "Khong co phien dau gia dang dien ra.",
+                        title = "Đang đấu giá",
+                        emptyMessage = "Không có phiên đấu giá đang diễn ra.",
                         items = state.presentAuctions
                     ),
                     AuctionSectionConfig(
-                        title = "Da ket thuc",
-                        emptyMessage = "Chua co phien dau gia nao ket thuc.",
+                        title = "Đã kết thúc",
+                        emptyMessage = "Chưa có phiên đấu giá nào kết thúc.",
                         items = state.pastAuctions
                     ),
                     AuctionSectionConfig(
-                        title = "Sap dien ra",
-                        emptyMessage = "Khong co phien dau gia sap dien ra.",
+                        title = "Sắp diễn ra",
+                        emptyMessage = "Không có phiên đấu giá sắp diễn ra.",
                         items = state.futureAuctions
                     )
                 )
@@ -192,7 +192,7 @@ private fun AuctionCategorySection(
 
         if (vehicleItems.isNotEmpty()) {
             Text(
-                text = "Xe dien",
+                text = "Xe điện",
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                 color = TextSecondary
             )
@@ -204,7 +204,7 @@ private fun AuctionCategorySection(
                     AuctionSummaryCard(
                         auction = auction,
                         placeholderIcon = Icons.Default.DirectionsCar,
-                        onClick = { onAuctionClick(auction) }
+                        onClick = { onAuctionClick(auction.copy(listingType = "VEHICLE")) }
                     )
                 }
             }
@@ -224,7 +224,7 @@ private fun AuctionCategorySection(
                     AuctionSummaryCard(
                         auction = auction,
                         placeholderIcon = Icons.Default.Bolt,
-                        onClick = { onAuctionClick(auction) }
+                        onClick = { onAuctionClick(auction.copy(listingType = "BATTERY")) }
                     )
                 }
             }
@@ -259,7 +259,7 @@ private fun AuctionSummaryCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = auction.title.orEmpty().ifBlank { "San pham dau gia" },
+                    text = auction.title.orEmpty().ifBlank { "Sản phẩm đấu giá" },
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -278,12 +278,12 @@ private fun AuctionSummaryCard(
 
                 when {
                     endsAt != null -> Text(
-                        text = "Ket thuc: $endsAt",
+                        text = "Kết thúc: $endsAt",
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary
                     )
                     startsAt != null -> Text(
-                        text = "Bat dau: $startsAt",
+                        text = "Bắt đầu: $startsAt",
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary
                     )
@@ -353,7 +353,7 @@ private fun AuctionErrorCard(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Khong the tai du lieu",
+                text = "Không thể tải dữ liệu",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.error
             )
@@ -363,7 +363,7 @@ private fun AuctionErrorCard(
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
             Button(onClick = onRetry) {
-                Text("Thu lai")
+                Text("Thử lại")
             }
         }
     }

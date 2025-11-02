@@ -64,14 +64,15 @@ class AuctionListViewModel : ViewModel() {
         val message = exception.message.orEmpty()
         return when {
             message.contains("Unable to resolve host", ignoreCase = true) ->
-                "Khong the ket noi den server. Vui long kiem tra ket noi Internet."
+                "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối Internet."
             message.contains("timeout", ignoreCase = true) ->
-                "Ket noi bi timeout. Vui long thu lai."
+                "Kết nối bị timeout. Vui lòng thử lại."
             message.contains("JSON", ignoreCase = true) ||
                 message.contains("Serialization", ignoreCase = true) ->
-                "Loi xu ly du lieu tu server: $message"
+                "Lỗi xử lý dữ liệu từ máy chủ: $message"
             else ->
-                "Loi: ${message.ifBlank { "Unknown error" }}"
+                "Lỗi: ${message.ifBlank { "Lỗi không xác định" }}"
         }
     }
 }
+

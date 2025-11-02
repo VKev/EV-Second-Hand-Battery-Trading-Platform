@@ -61,10 +61,22 @@ data class AuctionDetailData(
     val title: String? = null,
     @SerialName("description")
     val description: String? = null,
+    @SerialName("price")
+    val price: Int? = null,
     @SerialName("images")
     val images: List<String>? = null,
     @SerialName("image")
     val image: String? = null,
+    @SerialName("brand")
+    val brand: String? = null,
+    @SerialName("model")
+    val model: String? = null,
+    @SerialName("year")
+    val year: Int? = null,
+    @SerialName("mileage")
+    val mileage: Int? = null,
+    @SerialName("specifications")
+    val specifications: VehicleSpecifications? = null,
     @SerialName("startingPrice")
     val startingPrice: Int? = null,
     @SerialName("currentBid")
@@ -88,10 +100,72 @@ data class AuctionDetailData(
     @SerialName("auctionEndsAt")
     val auctionEndsAt: String? = null,
     @SerialName("status")
-    val status: String? = null
+    val status: String? = null,
+    @SerialName("isVerified")
+    val isVerified: Boolean? = null,
+    @SerialName("isAuction")
+    val isAuction: Boolean? = null,
+    @SerialName("auctionRejectionReason")
+    val auctionRejectionReason: String? = null,
+    @SerialName("createdAt")
+    val createdAt: String? = null,
+    @SerialName("updatedAt")
+    val updatedAt: String? = null,
+    @SerialName("sellerId")
+    val sellerId: String? = null,
+    @SerialName("seller")
+    val seller: AuctionSeller? = null,
+    @SerialName("bids")
+    val bids: List<AuctionBid>? = null,
+    @SerialName("capacity")
+    val capacity: Int? = null,
+    @SerialName("health")
+    val health: Int? = null,
+    @SerialName("batterySpecifications")
+    val batterySpecifications: BatterySpecifications? = null
 )
 
 @Serializable
 data class BidRequest(
     val amount: Int
+)
+
+@Serializable
+data class AuctionBid(
+    @SerialName("id")
+    val id: String? = null,
+    @SerialName("amount")
+    val amount: Int,
+    @SerialName("createdAt")
+    val createdAt: String? = null,
+    @SerialName("bidderId")
+    val bidderId: String? = null,
+    @SerialName("vehicleId")
+    val vehicleId: String? = null,
+    @SerialName("batteryId")
+    val batteryId: String? = null,
+    @SerialName("bidder")
+    val bidder: AuctionBidder? = null
+)
+
+@Serializable
+data class AuctionBidder(
+    @SerialName("id")
+    val id: String? = null,
+    @SerialName("name")
+    val name: String? = null,
+    @SerialName("avatar")
+    val avatar: String? = null
+)
+
+@Serializable
+data class AuctionSeller(
+    @SerialName("id")
+    val id: String? = null,
+    @SerialName("name")
+    val name: String? = null,
+    @SerialName("avatar")
+    val avatar: String? = null,
+    @SerialName("isVerified")
+    val isVerified: Boolean? = null
 )
