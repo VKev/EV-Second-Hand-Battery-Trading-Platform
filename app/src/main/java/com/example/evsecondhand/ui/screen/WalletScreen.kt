@@ -26,11 +26,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.evsecondhand.data.model.Transaction
 import com.example.evsecondhand.ui.theme.PrimaryGreen
 import com.example.evsecondhand.ui.theme.TextSecondary
+import com.example.evsecondhand.ui.components.ResponsiveText
+import com.example.evsecondhand.ui.components.ModernCard
+import com.example.evsecondhand.ui.components.StatusBadge
+import com.example.evsecondhand.ui.components.ModernPrimaryButton
 import com.example.evsecondhand.ui.viewmodel.WalletViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -38,7 +43,9 @@ import java.util.Locale
 
 @Composable
 fun WalletScreen(
-    viewModel: WalletViewModel = viewModel()
+    viewModel: WalletViewModel = viewModel(),
+    deepLinkUri: Uri? = null,
+    onConsumeDeepLink: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -52,6 +59,44 @@ fun WalletScreen(
     }
     val dateFormatter = remember {
         SimpleDateFormat("HH:mm dd/MM/yyyy", Locale.getDefault())
+    }
+
+    LaunchedEffect(deepLinkUri) {
+        deepLinkUri?.let { uri ->
+            val partnerCode = uri.getQueryParameter("partnerCode")
+            val resultCode = uri.getQueryParameter("resultCode")
+            val message = uri.getQueryParameter("message")?.let(Uri::decode)
+            val transId = uri.getQueryParameter("transId")
+            val orderId = uri.getQueryParameter("orderId")
+            val amount = uri.getQueryParameter("amount")?.toLongOrNull()
+            val formattedAmount = amount?.let { amt ->
+                runCatching { currencyFormatter.format(amt) }.getOrNull()
+            }
+            val displayMessage = when {
+                resultCode == "0" -> buildString {
+                    append("Thanh toan MoMo thanh cong")
+                    formattedAmount?.let { append(": +$it VND") }
+                    transId?.let {
+                        append("\nMa giao dich: $it")
+                    } ?: orderId?.let {
+                        append("\nMa don: $it")
+                    }
+                }
+                else -> message?.takeIf { it.isNotBlank() }
+                    ?: "Thanh toan MoMo that bai (ma $resultCode)"
+            }
+            android.util.Log.d(
+                "WalletScreen",
+                "Processed deep link from MoMo (partner=$partnerCode, result=$resultCode, transId=$transId)"
+            )
+            snackbarHostState.showSnackbar(
+                message = displayMessage,
+                duration = SnackbarDuration.Short
+            )
+            viewModel.refresh()
+            viewModel.markDepositResultHandled()
+            onConsumeDeepLink()
+        }
     }
     
     LaunchedEffect(state.pendingDeposit) {
@@ -88,14 +133,14 @@ fun WalletScreen(
 
                     if (!openedFallback) {
                         snackbarHostState.showSnackbar(
-                            message = "KhÙng th? m? ?ng d?ng MoMo. Vui lÚng ki?m tra v‡ th? l?i.",
+                            message = "KhÔøΩng th? m? ?ng d?ng MoMo. Vui lÔøΩng ki?m tra vÔøΩ th? l?i.",
                             duration = SnackbarDuration.Short
                         )
                     }
                 }
             } else {
                 snackbarHostState.showSnackbar(
-                    message = "KhÙng tÏm th?y thÙng tin thanh to·n.",
+                    message = "KhÔøΩng tÔøΩm th?y thÔøΩng tin thanh toÔøΩn.",
                     duration = SnackbarDuration.Short
                 )
             }
@@ -129,6 +174,24 @@ fun WalletScreen(
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
+
+    // Auto-refresh wallet when screen comes to foreground (e.g., after MoMo payment)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                android.util.Log.d("WalletScreen", "Screen resumed, refreshing wallet data")
+                scope.launch {
+                    delay(500) // Small delay to ensure navigation is complete
+                    viewModel.refresh()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+    
     if (state.showDepositDialog) {
         DepositDialog(
             onDismiss = { viewModel.hideDepositDialog() },
@@ -157,18 +220,24 @@ fun WalletScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Text(
+                    ResponsiveText(
                         text = "Qu·∫£n l√Ω V√≠",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
+                    ResponsiveText(
                         text = "Qu·∫£n l√Ω s·ªë d∆∞ cho ƒë·∫•u gi√° v√† mua s·∫Øm\ntr√™n EV Market",
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 14.sp,
+                            lineHeight = 20.sp
+                        ),
                         color = TextSecondary,
-                        lineHeight = 20.sp
+                        maxLines = 2
                     )
                 }
             }

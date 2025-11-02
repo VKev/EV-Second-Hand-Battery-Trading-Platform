@@ -127,6 +127,13 @@ class VehicleDetailViewModel : ViewModel() {
     fun placeDeposit() {
         val vehicle = _state.value.vehicle ?: return
         if (vehicle.isAuction != true) return
+        
+        val depositAmount = vehicle.depositAmount ?: run {
+            _state.value = _state.value.copy(
+                depositError = "Không tìm thấy số tiền cọc. Vui lòng thử lại."
+            )
+            return
+        }
 
         viewModelScope.launch {
             _state.value = _state.value.copy(
@@ -137,7 +144,8 @@ class VehicleDetailViewModel : ViewModel() {
 
             val result = auctionRepository.placeDeposit(
                 listingType = VEHICLE_LISTING_TYPE,
-                listingId = vehicle.id
+                listingId = vehicle.id,
+                amount = depositAmount
             )
 
             result.onSuccess { depositResult ->
@@ -176,10 +184,15 @@ class VehicleDetailViewModel : ViewModel() {
 
     private fun mapToErrorMessage(exception: Throwable): String {
         if (exception is HttpException) {
+            // Try to extract server message first
             extractServerMessage(exception)?.let { detailed ->
-                if (detailed.isNotBlank()) return detailed
+                if (detailed.isNotBlank()) {
+                    android.util.Log.d("VehicleDetailViewModel", "Server message: $detailed")
+                    return detailed
+                }
             }
 
+            // Fallback to generic messages
             return when (exception.code()) {
                 401 -> "Bạn cần đăng nhập để tiếp tục thao tác này."
                 403 -> "Bạn không có quyền thực hiện thao tác này."
@@ -211,12 +224,14 @@ class VehicleDetailViewModel : ViewModel() {
             null
         }?.trim().orEmpty()
 
+        android.util.Log.d("VehicleDetailViewModel", "Raw error body: $rawBody")
+
         if (rawBody.isBlank()) return null
 
         return try {
             val json = JSONObject(rawBody)
 
-            json.optString("message").takeIf { it.isNotBlank() }
+            val message = json.optString("message").takeIf { it.isNotBlank() }
                 ?: json.optJSONObject("error")?.optString("message")?.takeIf { it.isNotBlank() }
                 ?: json.optJSONArray("errors")?.firstNonBlank()
                 ?: json.optJSONObject("data")?.let { data ->
@@ -224,7 +239,11 @@ class VehicleDetailViewModel : ViewModel() {
                         ?: data.optJSONArray("errors")?.firstNonBlank()
                 }
                 ?: rawBody
+
+            android.util.Log.d("VehicleDetailViewModel", "Extracted message: $message")
+            message
         } catch (ignored: Exception) {
+            android.util.Log.e("VehicleDetailViewModel", "Error parsing JSON", ignored)
             rawBody
         }
     }

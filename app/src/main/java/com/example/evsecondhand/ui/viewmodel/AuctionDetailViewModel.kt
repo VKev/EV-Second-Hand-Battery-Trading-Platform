@@ -113,11 +113,22 @@ class AuctionDetailViewModel : ViewModel() {
     fun placeDeposit() {
         val listingType = _uiState.value.listingType ?: return
         val listingId = _uiState.value.listingId ?: return
+        
+        val depositAmount = _uiState.value.detail?.depositAmount 
+            ?: _uiState.value.vehicle?.depositAmount
+            ?: _uiState.value.battery?.depositAmount
+        
+        if (depositAmount == null) {
+            _uiState.value = _uiState.value.copy(
+                message = "Không tìm thấy số tiền cọc. Vui lòng thử lại."
+            )
+            return
+        }
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isProcessingDeposit = true)
 
-            repository.placeDeposit(listingType, listingId)
+            repository.placeDeposit(listingType, listingId, depositAmount)
                 .onSuccess { result ->
                     handleDepositSuccess(listingType, listingId, result)
                 }
@@ -220,6 +231,26 @@ class AuctionDetailViewModel : ViewModel() {
     }
 
     private fun mapToErrorMessage(exception: Throwable): String {
+        if (exception is retrofit2.HttpException) {
+            // Try to extract server message first
+            extractServerMessage(exception)?.let { detailed ->
+                if (detailed.isNotBlank()) {
+                    android.util.Log.d("AuctionDetailViewModel", "Server message: $detailed")
+                    return detailed
+                }
+            }
+
+            // Fallback to generic messages
+            return when (exception.code()) {
+                401 -> "Bạn cần đăng nhập để tiếp tục thao tác này."
+                403 -> "Bạn không có quyền thực hiện thao tác này."
+                404 -> "Không tìm thấy thông tin đấu giá. Vui lòng thử lại."
+                422 -> "Dữ liệu gửi lên không hợp lệ. Vui lòng kiểm tra và thử lại."
+                in 500..599 -> "Máy chủ đang gặp sự cố (HTTP ${exception.code()}). Vui lòng thử lại sau."
+                else -> "Lỗi máy chủ (HTTP ${exception.code()}): ${exception.message()}"
+            }
+        }
+
         val message = exception.message.orEmpty()
         return when {
             message.contains("Unable to resolve host", ignoreCase = true) ->
@@ -231,6 +262,45 @@ class AuctionDetailViewModel : ViewModel() {
                 "Lỗi xử lý dữ liệu từ máy chủ: $message"
             else ->
                 "Lỗi: ${message.ifBlank { "Lỗi không xác định" }}"
+        }
+    }
+
+    private fun extractServerMessage(exception: retrofit2.HttpException): String? {
+        val rawBody = try {
+            exception.response()?.errorBody()?.string()
+        } catch (ignored: Exception) {
+            null
+        }?.trim().orEmpty()
+
+        android.util.Log.d("AuctionDetailViewModel", "Raw error body: $rawBody")
+
+        if (rawBody.isBlank()) return null
+
+        return try {
+            val json = org.json.JSONObject(rawBody)
+
+            val message = json.optString("message").takeIf { it.isNotBlank() }
+                ?: json.optJSONObject("error")?.optString("message")?.takeIf { it.isNotBlank() }
+                ?: json.optJSONArray("errors")?.let { errors ->
+                    (0 until errors.length()).asSequence()
+                        .mapNotNull { errors.optString(it).takeIf { s -> s.isNotBlank() } }
+                        .firstOrNull()
+                }
+                ?: json.optJSONObject("data")?.let { data ->
+                    data.optString("message").takeIf { it.isNotBlank() }
+                        ?: data.optJSONArray("errors")?.let { errors ->
+                            (0 until errors.length()).asSequence()
+                                .mapNotNull { errors.optString(it).takeIf { s -> s.isNotBlank() } }
+                                .firstOrNull()
+                        }
+                }
+                ?: rawBody
+
+            android.util.Log.d("AuctionDetailViewModel", "Extracted message: $message")
+            message
+        } catch (ignored: Exception) {
+            android.util.Log.e("AuctionDetailViewModel", "Error parsing JSON", ignored)
+            rawBody
         }
     }
 }

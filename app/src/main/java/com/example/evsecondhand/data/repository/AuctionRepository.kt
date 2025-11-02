@@ -7,6 +7,7 @@ import com.example.evsecondhand.data.model.AuctionStatusData
 import com.example.evsecondhand.data.model.AuctionSummary
 import com.example.evsecondhand.data.model.AuctionDepositResponse
 import com.example.evsecondhand.data.model.BidRequest
+import com.example.evsecondhand.data.model.AuctionDepositRequest
 import com.example.evsecondhand.data.remote.AuctionApiService
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -42,9 +43,14 @@ class AuctionRepository(
 
     suspend fun placeDeposit(
         listingType: String,
-        listingId: String
+        listingId: String,
+        amount: Int
     ): Result<DepositResult> = runCatching {
-        val response: AuctionDepositResponse = auctionApi.placeDeposit(listingType, listingId)
+        val response: AuctionDepositResponse = auctionApi.placeDeposit(
+            listingType,
+            listingId,
+            AuctionDepositRequest(amount)
+        )
         DepositResult(
             message = response.message,
             status = response.data

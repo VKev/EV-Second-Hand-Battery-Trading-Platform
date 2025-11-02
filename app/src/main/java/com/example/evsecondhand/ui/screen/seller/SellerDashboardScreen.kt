@@ -46,6 +46,8 @@ import coil.compose.AsyncImage
 import com.example.evsecondhand.data.model.seller.BatteryItem
 import com.example.evsecondhand.data.model.seller.VehicleItem
 import com.example.evsecondhand.ui.theme.*
+import com.example.evsecondhand.ui.components.ResponsiveText
+import com.example.evsecondhand.ui.components.ModernCard
 import com.example.evsecondhand.ui.viewmodel.SellerDashboardUiState
 import com.example.evsecondhand.ui.viewmodel.SellerDashboardViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
@@ -205,16 +207,19 @@ private fun DashboardHeader(
         }
 
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "Quản lý tin",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary
+            ResponsiveText(
+                text = "Tin của tôi",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = TextPrimary,
+                maxLines = 1
             )
-            Text(
+            ResponsiveText(
                 text = "Theo dõi và quản lý tin đăng của bạn",
                 style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary
+                color = TextSecondary,
+                maxLines = 2
             )
         }
 
@@ -549,17 +554,21 @@ private fun QuickStatItem(
                 modifier = Modifier.size(24.dp)
             )
         }
-        Text(
+        ResponsiveText(
             text = value,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.ExtraBold,
-            color = TextPrimary
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontWeight = FontWeight.ExtraBold
+            ),
+            color = TextPrimary,
+            maxLines = 1
         )
-        Text(
+        ResponsiveText(
             text = label,
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontWeight = FontWeight.Medium
+            ),
             color = TextSecondary,
-            fontWeight = FontWeight.Medium
+            maxLines = 2
         )
     }
 }
@@ -612,18 +621,22 @@ private fun EnhancedMetricCard(
                     verticalAlignment = Alignment.Top
                 ) {
                     Column {
-                        Text(
+                        ResponsiveText(
                             text = data.title,
-                            style = MaterialTheme.typography.labelLarge,
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontWeight = FontWeight.Medium
+                            ),
                             color = TextSecondary,
-                            fontWeight = FontWeight.Medium
+                            maxLines = 2
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(
+                        ResponsiveText(
                             text = data.value,
-                            style = MaterialTheme.typography.headlineLarge,
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontWeight = FontWeight.ExtraBold
+                            ),
                             color = TextPrimary,
-                            fontWeight = FontWeight.ExtraBold
+                            maxLines = 1
                         )
                     }
 
@@ -991,11 +1004,12 @@ private fun EnhancedVehicleCard(vehicle: VehicleItem) {
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text(
+                    ResponsiveText(
                         text = vehicle.title,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
                         color = TextPrimary,
-                        fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1007,17 +1021,20 @@ private fun EnhancedVehicleCard(vehicle: VehicleItem) {
                             color = Color(0xFFF5F5F5),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text(
+                            ResponsiveText(
                                 text = vehicle.year.toString(),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = TextSecondary,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                maxLines = 1
                             )
                         }
-                        Text(
+                        ResponsiveText(
                             text = "${vehicle.brand} ${vehicle.model}",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary
+                            color = TextSecondary,
+                            maxLines = 1,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
                     }
                 }
@@ -1035,16 +1052,19 @@ private fun EnhancedVehicleCard(vehicle: VehicleItem) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text(
+                    ResponsiveText(
                         text = "Giá bán",
                         style = MaterialTheme.typography.labelMedium,
-                        color = TextSecondary
+                        color = TextSecondary,
+                        maxLines = 1
                     )
-                    Text(
+                    ResponsiveText(
                         text = formatCurrency(vehicle.price),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = PrimaryGreen
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.ExtraBold
+                        ),
+                        color = PrimaryGreen,
+                        maxLines = 1
                     )
                 }
 
@@ -1063,11 +1083,13 @@ private fun EnhancedVehicleCard(vehicle: VehicleItem) {
                             tint = TextSecondary,
                             modifier = Modifier.size(16.dp)
                         )
-                        Text(
+                        ResponsiveText(
                             text = "${formatMileage(vehicle.mileage)} km",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium
+                            ),
                             color = TextSecondary,
-                            fontWeight = FontWeight.Medium
+                            maxLines = 1
                         )
                     }
                 }
@@ -1122,11 +1144,12 @@ private fun EnhancedBatteryCard(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text(
+                    ResponsiveText(
                         text = battery.title,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
                         color = TextPrimary,
-                        fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1138,16 +1161,18 @@ private fun EnhancedBatteryCard(
                             color = Color(0xFFF5F5F5),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text(
+                            ResponsiveText(
                                 text = battery.brand,
                                 style = MaterialTheme.typography.labelMedium,
                                 color = TextSecondary,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                maxLines = 1
                             )
                         }
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f, fill = false)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.BatteryFull,
@@ -1155,10 +1180,11 @@ private fun EnhancedBatteryCard(
                                 tint = Color(0xFF00BFA5),
                                 modifier = Modifier.size(16.dp)
                             )
-                            Text(
+                            ResponsiveText(
                                 text = "${battery.capacity} kWh",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = TextSecondary
+                                color = TextSecondary,
+                                maxLines = 1
                             )
                         }
                     }
@@ -1186,24 +1212,28 @@ private fun EnhancedBatteryCard(
                             else AccentBlue.copy(alpha = 0.15f),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text(
+                            ResponsiveText(
                                 text = if (battery.isAuction) "🔨 Đấu giá" else "💰 Giá cố định",
-                                style = MaterialTheme.typography.labelMedium,
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.Bold
+                                ),
                                 color = if (battery.isAuction) Color(0xFFFF9800) else AccentBlue,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                fontWeight = FontWeight.Bold
+                                maxLines = 1
                             )
                         }
                     }
-                    Text(
+                    ResponsiveText(
                         text = if (battery.isAuction) {
                             battery.startingPrice?.let { "Từ ${formatCurrency(it)}" } ?: "--"
                         } else {
                             formatCurrency(battery.price)
                         },
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = PrimaryGreen
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.ExtraBold
+                        ),
+                        color = PrimaryGreen,
+                        maxLines = 1
                     )
                 }
 
@@ -1240,11 +1270,14 @@ private fun EnhancedBatteryCard(
                             tint = ErrorRed,
                             modifier = Modifier.size(20.dp)
                         )
-                        Text(
+                        ResponsiveText(
                             text = "Bị từ chối: $reason",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium
+                            ),
                             color = ErrorRed,
-                            fontWeight = FontWeight.Medium
+                            maxLines = 3,
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
