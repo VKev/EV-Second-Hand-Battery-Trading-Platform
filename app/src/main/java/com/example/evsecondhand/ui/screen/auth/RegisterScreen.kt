@@ -1,5 +1,6 @@
 package com.example.evsecondhand.ui.screen.auth
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -22,6 +23,7 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -29,7 +31,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.evsecondhand.data.remote.RetrofitClient
 import com.example.evsecondhand.ui.theme.PrimaryGreen
+import com.example.evsecondhand.ui.theme.TextSecondary
 import com.example.evsecondhand.ui.viewmodel.AuthState
 import com.example.evsecondhand.ui.viewmodel.AuthViewModel
 
@@ -48,7 +52,8 @@ fun RegisterScreen(
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var passwordError by remember { mutableStateOf<String?>(null) }
     val focusManager = LocalFocusManager.current
-    
+    val uriHandler = LocalUriHandler.current
+
     val authState by authViewModel.authState.collectAsState()
     
     // Handle registration success
@@ -305,9 +310,70 @@ fun RegisterScreen(
                             Text("Đăng ký", fontSize = 16.sp)
                         }
                     }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Divider(modifier = Modifier.weight(1f))
+                        Text(
+                            text = "HOẶC",
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = Color.Gray,
+                            fontSize = 12.sp
+                        )
+                        Divider(modifier = Modifier.weight(1f))
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            // Thêm client_type=mobile vào URL
+                            val googleAuthUrl = RetrofitClient.BASE_URL + "auth/google?client_type=mobile"
+                            uriHandler.openUri(googleAuthUrl)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        enabled = authState !is AuthState.Loading,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.White,
+                            contentColor = Color.Black
+                        ),
+                        border = BorderStroke(1.dp, Color.LightGray)
+                    ) {
+                        if (authState is AuthState.Loading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = PrimaryGreen
+                            )
+                        } else {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "G",
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = PrimaryGreen,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .background(Color.White, shape = RoundedCornerShape(4.dp))
+                                        .padding(2.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text("Tiếp tục với Google", fontSize = 16.sp)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
                     // Login Link
                     Row(
                         modifier = Modifier.fillMaxWidth(),

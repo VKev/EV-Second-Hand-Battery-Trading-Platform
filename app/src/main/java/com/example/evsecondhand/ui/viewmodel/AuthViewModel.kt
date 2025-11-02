@@ -21,6 +21,7 @@ import kotlinx.coroutines.tasks.await
 sealed class AuthState {
     object Idle : AuthState()
     object Loading : AuthState()
+    object ExchangingCode : AuthState() // <-- Trạng thái mới
     data class Success(val user: User) : AuthState()
     data class Error(val message: String) : AuthState()
     object LoggedOut : AuthState()
@@ -107,6 +108,25 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 Log.e(TAG, "Google sign-in failed", exception)
                 _authState.value = AuthState.Error(
                     exception.message ?: "Google authentication failed. Please try again."
+                )
+            }
+        }
+    }
+
+    fun exchangeAuthCodeForToken(code: String) {
+        // Tránh gọi lại nếu đang xử lý
+        if (_authState.value is AuthState.ExchangingCode || _authState.value is AuthState.Loading) return
+
+        viewModelScope.launch {
+            _authState.value = AuthState.ExchangingCode // <-- Set trạng thái đang trao đổi
+            val result = repository.exchangeAuthCodeForToken(code)
+            result.onSuccess { response ->
+                _isLoggedIn.value = true
+                _authState.value = AuthState.Success(response.data.user)
+            }.onFailure { exception ->
+                Log.e(TAG, "Auth code exchange failed", exception)
+                _authState.value = AuthState.Error(
+                    exception.message ?: "Authentication failed. Please try again."
                 )
             }
         }
