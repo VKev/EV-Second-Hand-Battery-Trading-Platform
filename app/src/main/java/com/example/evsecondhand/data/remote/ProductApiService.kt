@@ -13,7 +13,7 @@ interface ProductApiService {
     @GET("batteries/")
     suspend fun getBatteries(
         @Query("page") page: Int = 1,
-        @Query("limit") limit: Int = 10
+        @Query("limit") limit: Int = 100
     ): BatteryResponse
     
     @GET("batteries/{id}")
@@ -24,7 +24,7 @@ interface ProductApiService {
     @GET("vehicles/")
     suspend fun getVehicles(
         @Query("page") page: Int = 1,
-        @Query("limit") limit: Int = 10
+        @Query("limit") limit: Int = 100
     ): VehicleResponse
 
     @GET("vehicles/{id}")

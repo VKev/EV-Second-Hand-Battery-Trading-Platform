@@ -13,6 +13,7 @@ class PaymentRepository(
 ) {
 
     private fun authHeader(): String = "Bearer $accessToken"
+    private var pendingWalletRequest: CheckoutRequest? = null
 
     suspend fun fetchWalletBalance(): Result<WalletBalance> = runCatching {
         api.getWalletBalance(authHeader()).data
@@ -31,17 +32,26 @@ class PaymentRepository(
         listingType: String,
         paymentMethod: String
     ): Result<CheckoutResponse> = runCatching {
-        api.checkout(
-            authHeader(),
-            CheckoutRequest(
-                listingId = listingId,
-                listingType = listingType,
-                paymentMethod = paymentMethod
-            )
+        val request = CheckoutRequest(
+            listingId = listingId,
+            listingType = listingType,
+            paymentMethod = paymentMethod
         )
+
+        if (paymentMethod == "WALLET") {
+            pendingWalletRequest = request
+        } else {
+            pendingWalletRequest = null
+        }
+
+        api.checkout(authHeader(), request)
     }
 
     suspend fun confirmCheckoutPayment(transactionId: String): Result<String?> = runCatching {
-        api.payWithWallet(authHeader(), transactionId).message
+        val walletRequest = pendingWalletRequest
+            ?: throw IllegalStateException("No pending wallet checkout request available to confirm.")
+        api.payWithWallet(authHeader(), transactionId, walletRequest).also {
+            pendingWalletRequest = null
+        }.message
     }
 }

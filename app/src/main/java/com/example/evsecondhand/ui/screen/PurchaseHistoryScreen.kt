@@ -572,7 +572,7 @@ private fun parseDate(dateString: String): Date {
 
 private fun getPaymentMethodDisplay(gateway: String): String = when (gateway.uppercase()) {
     "WALLET" -> "Ví điện tử"
-    "ZALOPAY" -> "ZaloPay"
+    "MOMO" -> "MoMo"
     "VNPAY" -> "VNPay"
     "BANK" -> "Bank Transfer"
     else -> gateway

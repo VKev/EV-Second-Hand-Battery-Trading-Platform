@@ -39,6 +39,7 @@ interface CheckoutApiService {
     @POST("checkout/{transactionId}/pay-with-wallet")
     suspend fun payWithWallet(
         @Header("Authorization") authHeader: String,
-        @Path("transactionId") transactionId: String
+        @Path("transactionId") transactionId: String,
+        @Body body: CheckoutRequest
     ): GenericServerMessageResponse
 }

@@ -25,14 +25,14 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import kotlin.math.min
 
 /**
- * Home Screen - Màn hình chính của ứng dụng
+ * Home Screen - M\u00E0n h\u00ECnh ch\u00EDnh c\u1EE7a \u1EE9ng d\u1EE5ng
  * 
- * Components được tách ra thành các file riêng:
- * - HeroSection.kt: Hero banner với parallax effect
- * - WelcomeSection.kt: Welcome card và trust badges
- * - ProductCards.kt: Battery & Vehicle cards với animations
+ * Components Ã„â€˜Ã†Â°Ã¡Â»Â£c tÃƒÂ¡ch ra thÃƒÂ nh cÃƒÂ¡c file riÃƒÂªng:
+ * - HeroSection.kt: Hero banner v\u1EDBi parallax effect
+ * - WelcomeSection.kt: Welcome card v\u00E0 trust badges
+ * - ProductCards.kt: Battery & Vehicle cards v\u1EDBi animations
  * - StateCards.kt: Loading, Error, Empty state cards
- * - FooterSection.kt: Footer với contact info, services, social links
+ * - FooterSection.kt: Footer v\u1EDBi contact info, services, social links
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,8 +103,8 @@ fun HomeScreen(
                 item {
                     SectionHeader(
                         icon = Icons.Default.BatteryChargingFull,
-                        title = "Pin EV Chất Lượng",
-                        subtitle = "Được kiểm định kỹ lưỡng, bảo hành rõ ràng"
+                        title = "Pin EV ch\u1EA5t l\u01B0\u1EE3ng",
+                        subtitle = "\u0110\u01B0\u1EE3c ki\u1EC3m \u0111\u1ECBnh k\u1EF9 l\u01B0\u1EE1ng, b\u1EA3o h\u00E0nh r\u00F5 r\u00E0ng"
                     )
                 }
                 
@@ -119,7 +119,7 @@ fun HomeScreen(
                             )
                         }
                         state.batteries.isEmpty() && !state.isLoadingBatteries -> {
-                            EmptyStateCard(message = "Không có pin nào khả dụng")
+                            EmptyStateCard(message = "Kh\u00F4ng c\u00F3 pin n\u00E0o kh\u1EA3 d\u1EE5ng")
                         }
                         else -> {
                             LazyRow(
@@ -159,8 +159,8 @@ fun HomeScreen(
                 item {
                     SectionHeader(
                         icon = Icons.Default.DirectionsCar,
-                        title = "Xe Điện Đa Dạng",
-                        subtitle = "Nhiều thương hiệu, mẫu mã từ phổ thông đến cao cấp"
+                        title = "Xe \u0111i\u1EC7n \u0111a d\u1EA1ng",
+                        subtitle = "Nhi\u1EC1u th\u01B0\u01A1ng hi\u1EC7u, m\u1EABu m\u00E3 t\u1EEB ph\u1ED5 th\u00F4ng \u0111\u1EBFn cao c\u1EA5p"
                     )
                 }
                 
@@ -175,7 +175,7 @@ fun HomeScreen(
                             )
                         }
                         state.vehicles.isEmpty() && !state.isLoadingVehicles -> {
-                            EmptyStateCard(message = "Không có xe nào khả dụng")
+                            EmptyStateCard(message = "Kh\u00F4ng c\u00F3 xe n\u00E0o kh\u1EA3 d\u1EE5ng")
                         }
                         else -> {
                             LazyRow(
@@ -209,7 +209,7 @@ fun HomeScreen(
             }
         }
         
-        // Chatbot Widget - Floating action button ở góc dưới phải
+        // Chatbot Widget - Floating action button \u1EDF g\u00F3c d\u01B0\u1EDBi ph\u1EA3i
         ChatbotWidget(
             viewModel = chatbotViewModel,
             modifier = Modifier.fillMaxSize(),
@@ -218,3 +218,5 @@ fun HomeScreen(
         )
     }
 }
+
+

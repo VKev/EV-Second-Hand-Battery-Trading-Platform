@@ -76,7 +76,7 @@ fun HeroSection(parallaxOffset: Float = 0f) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "EV Market",
+                    text = "Trang ch\u1EE7",
                     fontSize = 42.sp,
                     fontWeight = FontWeight.Black,
                     color = Color.White,
@@ -84,7 +84,7 @@ fun HeroSection(parallaxOffset: Float = 0f) {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Nền tảng mua bán xe điện & pin EV",
+                    text = "N\u1EC1n t\u1EA3ng mua b\u00E1n xe \u0111i\u1EC7n & pin EV",
                     fontSize = 16.sp,
                     color = Color.White.copy(alpha = 0.9f),
                     fontWeight = FontWeight.Medium
@@ -110,17 +110,17 @@ fun HeroSection(parallaxOffset: Float = 0f) {
                 // Features
                 FeatureRow(
                     icon = Icons.Default.Verified,
-                    text = "Sản phẩm kiểm định"
+                    text = "S\u1EA3n ph\u1EA9m ki\u1EC3m \u0111\u1ECBnh"
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 FeatureRow(
                     icon = Icons.Default.BatteryChargingFull,
-                    text = "Pin còn tối thiểu 70%"
+                    text = "Pin c\u00F2n t\u1ED1i thi\u1EC3u 70%"
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 FeatureRow(
                     icon = Icons.Default.Security,
-                    text = "Giao dịch an toàn"
+                    text = "Giao d\u1ECBch an to\u00E0n"
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -132,17 +132,17 @@ fun HeroSection(parallaxOffset: Float = 0f) {
                 ) {
                     TrustBadge(
                         icon = Icons.Default.CheckCircle,
-                        text = "Chứng nhận",
+                        text = "Ch\u1EE9ng nh\u1EADn",
                         modifier = Modifier.weight(1f)
                     )
                     TrustBadge(
                         icon = Icons.Default.Shield,
-                        text = "Bảo hành",
+                        text = "B\u1EA3o h\u00E0nh",
                         modifier = Modifier.weight(1f)
                     )
                     TrustBadge(
                         icon = Icons.Default.SupportAgent,
-                        text = "Hỗ trợ 24/7",
+                        text = "H\u1ED7 tr\u1EE3 24/7",
                         modifier = Modifier.weight(1f)
                     )
                 }

@@ -68,27 +68,27 @@ fun CheckoutScreen(
                 val paymentInfo = state.checkoutResponse.data.paymentInfo
                 val paymentDetail = state.checkoutResponse.data.paymentDetail
                 
-                // Check if this is ZaloPay payment (has payUrl to open)
-                val hasZaloPayPayment = (paymentInfo?.payUrl != null) || (paymentDetail?.payUrl != null)
-                android.util.Log.d("CheckoutScreen", "Has ZaloPay payment: $hasZaloPayPayment")
+                // Check if this is MoMo payment (has payUrl to open)
+                val hasMoMoPayment = (paymentInfo?.payUrl != null) || (paymentDetail?.payUrl != null)
+                android.util.Log.d("CheckoutScreen", "Has MoMo payment: $hasMoMoPayment")
                 
-                if (hasZaloPayPayment) {
-                    // ZaloPay payment: Open payment URL (App to App)
+                if (hasMoMoPayment) {
+                    // MoMo payment: Open payment URL (App to App)
                     val payUrl = paymentInfo?.payUrl ?: paymentDetail?.payUrl
                     val deeplink = paymentInfo?.deeplink
                     
-                    android.util.Log.d("CheckoutScreen", "Opening ZaloPay payment - deeplink: $deeplink, payUrl: $payUrl")
+                    android.util.Log.d("CheckoutScreen", "Opening MoMo payment - deeplink: $deeplink, payUrl: $payUrl")
                     
                     try {
                         // Prefer deeplink first, fallback to payUrl
                         val urlToOpen = deeplink ?: payUrl
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(urlToOpen))
-                        intent.setPackage("com.vng.zalopay") // Force open ZaloPay app
+                        intent.setPackage("com.vng.MoMo") // Force open MoMo app
                         context.startActivity(intent)
-                        android.util.Log.d("CheckoutScreen", "Successfully opened ZaloPay app")
+                        android.util.Log.d("CheckoutScreen", "Successfully opened MoMo app")
                     } catch (e: Exception) {
-                        // If ZaloPay app not installed, fallback to browser
-                        android.util.Log.e("CheckoutScreen", "ZaloPay app not found, opening in browser", e)
+                        // If MoMo app not installed, fallback to browser
+                        android.util.Log.e("CheckoutScreen", "MoMo app not found, opening in browser", e)
                         try {
                             val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(payUrl))
                             context.startActivity(webIntent)
@@ -393,14 +393,14 @@ fun PaymentMethodSection(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // ZaloPay Payment Option
+            // MoMo Payment Option
             PaymentOption(
                 icon = Icons.Default.Payment,
-                name = PaymentMethod.ZALOPAY.displayName,
-                description = "Thanh toán qua ví điện tử ZaloPay",
-                isSelected = selectedMethod == PaymentMethod.ZALOPAY,
+                name = PaymentMethod.MOMO.displayName,
+                description = "Thanh toán qua ví điện tử MoMo",
+                isSelected = selectedMethod == PaymentMethod.MOMO,
                 isEnabled = true,
-                onClick = { onMethodSelected(PaymentMethod.ZALOPAY) }
+                onClick = { onMethodSelected(PaymentMethod.MOMO) }
             )
         }
     }

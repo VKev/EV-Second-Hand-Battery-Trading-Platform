@@ -5,11 +5,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- Query for ZaloPay app -->
-    <queries>
-        <package android:name="com.vng.zalopay" />
-    </queries>
-
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -31,16 +26,26 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             
-            <!-- Deep link for ZaloPay callback -->
-            <intent-filter>
+            <!-- Deep link intent filters for MoMo payment returns -->
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data
+                
+                <!-- Deep link scheme -->
+                <data 
                     android:scheme="evmarket"
                     android:host="app" />
+                <data 
+                    android:scheme="evmarket"
+                    android:host="wallet" />
+                <data 
+                    android:scheme="evmarket"
+                    android:host="checkout"
+                    android:pathPrefix="/result" />
             </intent-filter>
         </activity>
     </application>
 
 </manifest>
+
