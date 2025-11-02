@@ -226,7 +226,8 @@ private fun VehicleDetailContent(
         item {
             ActionButtonsRow(
                 vehicle = vehicle,
-                onPaymentDashboard = onPaymentDashboard
+                onPaymentDashboard = onPaymentDashboard,
+                onBidClick = onBidClick
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
@@ -937,11 +938,11 @@ private fun DescriptionSection(description: String) {
 @Composable
 private fun ActionButtonsRow(
     vehicle: Vehicle?,
-    onPaymentDashboard: (Vehicle) -> Unit
+    onPaymentDashboard: (Vehicle) -> Unit,
+    onBidClick: () -> Unit
 ) {
     val isAuctionItem = vehicle?.isAuction == true ||
         vehicle?.status?.contains("AUCTION", ignoreCase = true) == true
-    val primaryActionLabel = if (isAuctionItem) "Dau gia" else "Mua ngay"
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -956,13 +957,28 @@ private fun ActionButtonsRow(
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
         ) {
             Text(
-                text = primaryActionLabel,
+                text = "Mua ngay",
                 style = MaterialTheme.typography.labelLarge.copy(
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
             )
         }
+
+        if (isAuctionItem) {
+            OutlinedButton(
+                onClick = onBidClick,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryGreen)
+            ) {
+                Text(
+                    text = "Đấu giá",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                )
+            }
+        }
+
         OutlinedButton(
             onClick = { /* TODO: Compare */ },
             modifier = Modifier.weight(1f),

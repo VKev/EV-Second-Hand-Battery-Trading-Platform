@@ -1,7 +1,10 @@
 package com.example.evsecondhand.ui.screen.payment
 
+import android.content.Intent
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.util.Base64
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.*
@@ -99,8 +102,8 @@ fun PaymentDashboardScreen(
         state = uiState,
         onRefresh = viewModel::refresh,
         onCheckout = viewModel::initiateCheckout,
-        onConfirmZaloPayPayment = viewModel::confirmZaloPayPayment,
-        onDismissZaloPayPayment = viewModel::clearPendingZaloPayPayment,
+        onConfirmMoMoPayment = viewModel::confirmMomoPayment,
+        onDismissMoMoPayment = viewModel::clearPendingMomoPayment,
         onBackClick = onBackClick
     )
 }
@@ -121,14 +124,40 @@ private fun PaymentDashboardContent(
     state: PaymentUiState,
     onRefresh: () -> Unit,
     onCheckout: (CheckoutPaymentMethod) -> Unit,
-    onConfirmZaloPayPayment: (String) -> Unit,
-    onDismissZaloPayPayment: () -> Unit,
+    onConfirmMoMoPayment: (String) -> Unit,
+    onDismissMoMoPayment: () -> Unit,
     onBackClick: () -> Unit
 ) {
     val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = state.isLoading)
     val scrollState = rememberScrollState()
     val context = LocalContext.current
 
+
+    LaunchedEffect(state.pendingMomoPayment) {
+        state.pendingMomoPayment?.paymentInfo?.let { info ->
+            val deeplink = info.deeplink?.takeIf { it.isNotBlank() }
+                ?: info.payUrl?.takeIf { it.isNotBlank() }
+                ?: info.deeplinkMiniApp?.takeIf { it.isNotBlank() }
+            if (deeplink != null) {
+                val launched = runCatching {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deeplink)).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                    true
+                }.onFailure { throwable ->
+                    Log.e("PaymentDashboard", "Unable to open MoMo deeplink", throwable)
+                }.getOrDefault(false)
+                if (!launched) {
+                    Toast.makeText(
+                        context,
+                        "Khong the mo ung dung MoMo. Vui long kiem tra va thu lai.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
     var selectedPaymentMethod by remember { mutableStateOf(PaymentMethod.WALLET) }
     var fullName by remember { mutableStateOf("Nguyễn Văn A") }
     var email by remember { mutableStateOf("example@email.com") }
@@ -228,7 +257,7 @@ private fun PaymentDashboardContent(
                     onCompletePayment = { method ->
                         val checkoutMethod = when (method) {
                             PaymentMethod.WALLET -> CheckoutPaymentMethod.WALLET
-                            PaymentMethod.ZALOPAY -> CheckoutPaymentMethod.ZALOPAY
+                            PaymentMethod.MOMO -> CheckoutPaymentMethod.MOMO
                         }
                         onCheckout(checkoutMethod)
                     }
@@ -238,23 +267,23 @@ private fun PaymentDashboardContent(
             }
         }
 
-        if (state.isCheckoutProcessing && state.pendingZaloPayPayment == null) {
+        if (state.isCheckoutProcessing && state.pendingMomoPayment == null) {
             ProcessingOverlay()
         }
 
-        state.pendingZaloPayPayment?.let { pending ->
+        state.pendingMomoPayment?.let { pending ->
             val paymentInfo = pending.paymentInfo
             val clipboardManager = LocalClipboardManager.current
 
             AlertDialog(
                 onDismissRequest = {
                     if (!state.isCheckoutProcessing) {
-                        onDismissZaloPayPayment()
+                        onDismissMoMoPayment()
                     }
                 },
                 title = {
                     Text(
-                        text = "Hoàn tất thanh toán ZaloPay",
+                        text = "Hoàn tất thanh toán MoMo",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -265,7 +294,7 @@ private fun PaymentDashboardContent(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = "Quét mã QR ZaloPay bên dưới để thanh toán, sau đó quay lại và xác nhận.",
+                            text = "Quét mã QR MoMo bên dưới để thanh toán, sau đó quay lại và xác nhận.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextPrimary
                         )
@@ -281,7 +310,7 @@ private fun PaymentDashboardContent(
                             style = MaterialTheme.typography.bodySmall,
                             color = TextSecondary
                         )
-                        ZaloPayQrDisplay(
+                        MoMoQrDisplay(
                             paymentInfo = paymentInfo,
                             onCopyLink = { link ->
                                 clipboardManager.setText(AnnotatedString(link))
@@ -296,7 +325,7 @@ private fun PaymentDashboardContent(
                 },
                 confirmButton = {
                     TextButton(
-                        onClick = { onConfirmZaloPayPayment(pending.transactionId) },
+                        onClick = { onConfirmMoMoPayment(pending.transactionId) },
                         enabled = !state.isCheckoutProcessing
                     ) {
                         if (state.isCheckoutProcessing) {
@@ -315,7 +344,7 @@ private fun PaymentDashboardContent(
                 },
                 dismissButton = {
                     TextButton(
-                        onClick = onDismissZaloPayPayment,
+                        onClick = onDismissMoMoPayment,
                         enabled = !state.isCheckoutProcessing
                     ) {
                         Text(
@@ -891,7 +920,7 @@ private fun EnhancedPaymentMethodSection(
         ) {
             when (selectedMethod) {
                 PaymentMethod.WALLET -> EnhancedWalletDetails(availableBalance)
-                PaymentMethod.ZALOPAY -> EnhancedZaloPayDetails()
+                PaymentMethod.MOMO -> EnhancedMomoDetails()
             }
         }
     }
@@ -1219,7 +1248,7 @@ private fun WalletFeatureRow(
 }
 
 @Composable
-private fun EnhancedZaloPayDetails() {
+private fun EnhancedMomoDetails() {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -1238,7 +1267,7 @@ private fun EnhancedZaloPayDetails() {
                 )
                 Column {
                     Text(
-                        text = "EV Market sẽ tạo mã QR ZaloPay để bạn quét và thanh toán an toàn.",
+                        text = "EV Market sẽ tạo mã QR MoMo để bạn quét và thanh toán an toàn.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextPrimary
                     )
@@ -1252,8 +1281,8 @@ private fun EnhancedZaloPayDetails() {
         }
 
         EWalletOptionWithLogo(
-            name = "ZaloPay",
-            description = "Ví điện tử ZaloPay",
+            name = "MoMo",
+            description = "Ví điện tử MoMo",
             logoRes = R.drawable.momo_logo,
             backgroundColor = Color(0xFF008FE5)
         )
@@ -1271,7 +1300,7 @@ private fun EnhancedZaloPayDetails() {
                 )
                 Column {
                     Text(
-                        text = "Kiểm tra lại số tiền và nội dung giao dịch trong ZaloPay",
+                        text = "Kiểm tra lại số tiền và nội dung giao dịch trong MoMo",
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextPrimary,
                         fontWeight = FontWeight.Bold
@@ -1634,11 +1663,11 @@ private fun EnhancedCheckoutActionSection(
     val baseReady = agreedToTerms && productReady && payableAmount > 0L
     val buttonEnabled = when (selectedMethod) {
         PaymentMethod.WALLET -> baseReady && hasEnoughBalance
-        PaymentMethod.ZALOPAY -> baseReady
+        PaymentMethod.MOMO -> baseReady
     }
     val buttonLabel = when (selectedMethod) {
         PaymentMethod.WALLET -> "Thanh toán bằng Ví EV Market • ${formatCurrency(payableAmount)}"
-        PaymentMethod.ZALOPAY -> "Thanh toán qua ZaloPay • ${formatCurrency(payableAmount)}"
+        PaymentMethod.MOMO -> "Thanh toán qua MoMo • ${formatCurrency(payableAmount)}"
     }
 
     EnhancedPaymentSectionCard(
@@ -1765,7 +1794,7 @@ private fun EnhancedCheckoutActionSection(
                 )
                 }
             }
-        } else if (selectedMethod == PaymentMethod.ZALOPAY) {
+        } else if (selectedMethod == PaymentMethod.MOMO) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -1783,7 +1812,7 @@ private fun EnhancedCheckoutActionSection(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = "Mã QR ZaloPay sẽ được hiển thị để bạn quét và thanh toán.",
+                        text = "Mã QR MoMo sẽ được hiển thị để bạn quét và thanh toán.",
                         style = MaterialTheme.typography.bodySmall,
                         color = AccentBlue,
                         fontWeight = FontWeight.SemiBold
@@ -1795,7 +1824,7 @@ private fun EnhancedCheckoutActionSection(
 }
 
 @Composable
-private fun ZaloPayQrDisplay(
+private fun MoMoQrDisplay(
     paymentInfo: CheckoutPaymentInfo,
     onCopyLink: (String) -> Unit
 ) {
@@ -1815,7 +1844,7 @@ private fun ZaloPayQrDisplay(
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            text = "Quét mã bằng ứng dụng ZaloPay",
+            text = "Quét mã bằng ứng dụng MoMo",
             style = MaterialTheme.typography.bodyMedium,
             color = TextPrimary,
             fontWeight = FontWeight.Bold
@@ -1834,7 +1863,7 @@ private fun ZaloPayQrDisplay(
                 ) {
                     Image(
                         painter = qrPainter,
-                        contentDescription = "Mã QR ZaloPay",
+                        contentDescription = "Mã QR MoMo",
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp),
@@ -1858,7 +1887,7 @@ private fun ZaloPayQrDisplay(
                             .data(networkQrUrl)
                             .crossfade(true)
                             .build(),
-                        contentDescription = "Mã QR ZaloPay",
+                        contentDescription = "Mã QR MoMo",
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp),
@@ -2126,8 +2155,10 @@ private enum class PaymentMethod(
     val description: String,
     val icon: ImageVector
 ) {
-    WALLET("Ví EV Market", "Sử dụng số dư ví của bạn", Icons.Filled.AccountBalanceWallet),
-    ZALOPAY("ZaloPay", "Thanh toán qua ví ZaloPay", Icons.Filled.PhoneIphone),
+    WALLET("Vi EV Market", "Su dung so du vi cua ban", Icons.Filled.AccountBalanceWallet),
+    MOMO("MoMo", "Thanh toan qua vi MoMo", Icons.Filled.PhoneIphone),
 }
 
 private const val PLATFORM_FEE = 20_000L
+
+

@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.evsecondhand.data.model.DepositData
 import com.example.evsecondhand.data.model.Transaction
 import com.example.evsecondhand.data.remote.RetrofitClient
 import com.example.evsecondhand.data.repository.WalletRepository
@@ -22,9 +23,9 @@ data class WalletState(
     val currentPage: Int = 1,
     val totalPages: Int = 1,
     val totalTransactions: Int = 0,
-    val depositPayUrl: String? = null,
-    val zpTransToken: String? = null, // ZaloPay transaction token for SDK
-    val showDepositDialog: Boolean = false
+    val pendingDeposit: DepositData? = null,
+    val showDepositDialog: Boolean = false,
+    val awaitingDepositResult: Boolean = false
 )
 
 class WalletViewModel(application: Application) : AndroidViewModel(application) {
@@ -129,15 +130,18 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             
-            val result = repository.depositFunds(amount)
+            val result = repository.depositFunds(
+                amount = amount,
+                redirectUrl = com.example.evsecondhand.data.zalopay.ZaloPayConfig.WALLET_DEPOSIT_REDIRECT
+            )
             
             result.onSuccess { depositData ->
-                Log.d(TAG, "Deposit request successful - zpTransToken: ${depositData.requestId}")
+                Log.d(TAG, "Deposit request successful - requestId: ${depositData.requestId}")
                 _state.value = _state.value.copy(
                     isLoading = false,
-                    depositPayUrl = depositData.payUrl,
-                    zpTransToken = depositData.requestId, // This is the zp_trans_token from ZaloPay
-                    showDepositDialog = false
+                    pendingDeposit = depositData,
+                    showDepositDialog = false,
+                    awaitingDepositResult = true
                 )
             }.onFailure { exception ->
                 Log.e(TAG, "Deposit request failed", exception)
@@ -149,8 +153,12 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
     
-    fun clearDepositPayUrl() {
-        _state.value = _state.value.copy(depositPayUrl = null, zpTransToken = null)
+    fun clearPendingDeposit() {
+        _state.value = _state.value.copy(pendingDeposit = null)
+    }
+
+    fun markDepositResultHandled() {
+        _state.value = _state.value.copy(awaitingDepositResult = false)
     }
 
     fun withdrawFunds() {

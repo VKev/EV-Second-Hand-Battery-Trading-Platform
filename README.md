@@ -129,7 +129,7 @@ app/src/main/java/com/example/evsecondhand/
 
 ## 👨‍💻 Lưu ý khi phát triển
 
-1. **API Base URL**: Hiện tại đang dùng staging API tại `https://evmarket-api-staging.onrender.com/`
+1. **API Base URL**: Hiện tại đang dùng staging API tại `https://evmarket-api-staging-backup.onrender.com/`
 2. **Min SDK**: 24 (Android 7.0)
 3. **Target SDK**: 36
 4. **Compose**: Sử dụng Material 3 cho UI components

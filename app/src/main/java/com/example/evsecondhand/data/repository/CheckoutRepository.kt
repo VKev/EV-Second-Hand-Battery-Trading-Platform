@@ -36,15 +36,17 @@ class CheckoutRepository(
     suspend fun checkout(
         listingId: String,
         listingType: String,
-        paymentMethod: String
+        paymentMethod: String,
+        redirectUrl: String? = null
     ): Result<CheckoutResponse> {
         return try {
             val token = getBearerToken()
-            Log.d(TAG, "Checkout - listingId: $listingId, type: $listingType, payment: $paymentMethod")
+            Log.d(TAG, "Checkout - listingId: $listingId, type: $listingType, payment: $paymentMethod, redirectUrl: $redirectUrl")
             val request = CheckoutRequest(
                 listingId = listingId,
                 listingType = listingType,
-                paymentMethod = paymentMethod
+                paymentMethod = paymentMethod,
+                redirectUrl = redirectUrl
             )
             val response = checkoutApi.checkout("Bearer $token", request)
             Log.d(TAG, "Checkout successful - transactionId: ${response.data.transactionId}")
@@ -53,7 +55,7 @@ class CheckoutRepository(
             if (paymentMethod == "WALLET") {
                 Log.d(TAG, "WALLET payment - confirming with pay-with-wallet API")
                 // Trigger pay-with-wallet on backend
-                checkoutApi.payWithWallet("Bearer $token", response.data.transactionId)
+                checkoutApi.payWithWallet("Bearer $token", response.data.transactionId, request)
 
                 // After triggering, fetch transaction status from Purchase API
                 val txStatusResponse = purchaseApi.getTransactionStatus("Bearer $token", response.data.transactionId)

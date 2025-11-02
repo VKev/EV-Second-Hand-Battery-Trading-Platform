@@ -1,6 +1,7 @@
 package com.example.evsecondhand.ui.screen
 
-import androidx.activity.ComponentActivity
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -11,6 +12,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,16 +24,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.evsecondhand.data.model.Transaction
-import com.example.evsecondhand.data.zalopay.ZaloPaySDKHelper
 import com.example.evsecondhand.ui.theme.PrimaryGreen
 import com.example.evsecondhand.ui.theme.TextSecondary
+import com.example.evsecondhand.ui.components.ResponsiveText
+import com.example.evsecondhand.ui.components.ModernCard
+import com.example.evsecondhand.ui.components.StatusBadge
+import com.example.evsecondhand.ui.components.ModernPrimaryButton
 import com.example.evsecondhand.ui.viewmodel.WalletViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -37,11 +43,14 @@ import java.util.Locale
 
 @Composable
 fun WalletScreen(
-    viewModel: WalletViewModel = viewModel()
+    viewModel: WalletViewModel = viewModel(),
+    deepLinkUri: Uri? = null,
+    onConsumeDeepLink: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
     val snackbarHostState = remember { SnackbarHostState() }
     val currencyFormatter = remember {
         NumberFormat.getInstance(Locale.US).apply {
@@ -51,95 +60,142 @@ fun WalletScreen(
     val dateFormatter = remember {
         SimpleDateFormat("HH:mm dd/MM/yyyy", Locale.getDefault())
     }
-    
-    // Handle opening ZaloPay payment using SDK - App to App directly
-    LaunchedEffect(state.zpTransToken) {
-        state.zpTransToken?.let { token ->
-            android.util.Log.d("WalletScreen", "Opening ZaloPay with token: $token")
-            
-            // Use ZaloPay SDK to open the app directly (not browser)
-            val activity = context as? ComponentActivity
-            if (activity != null) {
-                ZaloPaySDKHelper.payWithZaloPay(
-                    activity = activity,
-                    zpTransToken = token,
-                    onPaymentResult = { resultCode, message ->
-                        android.util.Log.d("WalletScreen", "Payment result: code=$resultCode, message=$message")
-                        
-                        CoroutineScope(Dispatchers.Main).launch {
-                            when (resultCode) {
-                                1 -> {
-                                    // Payment success
-                                    snackbarHostState.showSnackbar(
-                                        message = "✅ Thanh toán thành công! Đang cập nhật số dư...",
-                                        duration = SnackbarDuration.Short
-                                    )
-                                    // Wait 2 seconds for backend to process the payment
-                                    delay(2000)
-                                    // Refresh wallet balance
-                                    viewModel.refresh()
-                                    snackbarHostState.showSnackbar(
-                                        message = "💰 Số dư ví đã được cập nhật!",
-                                        duration = SnackbarDuration.Short
-                                    )
-                                }
-                                4 -> {
-                                    // Payment canceled
-                                    snackbarHostState.showSnackbar(
-                                        message = "❌ Thanh toán đã bị hủy",
-                                        duration = SnackbarDuration.Short
-                                    )
-                                }
-                                else -> {
-                                    // Payment error
-                                    snackbarHostState.showSnackbar(
-                                        message = "⚠️ Lỗi thanh toán: $message",
-                                        duration = SnackbarDuration.Long
-                                    )
-                                }
-                            }
-                        }
-                    }
-                )
-                viewModel.clearDepositPayUrl()
-            } else {
-                android.util.Log.e("WalletScreen", "Context is not ComponentActivity")
+
+    LaunchedEffect(deepLinkUri) {
+        deepLinkUri?.let { uri ->
+            val partnerCode = uri.getQueryParameter("partnerCode")
+            val resultCode = uri.getQueryParameter("resultCode")
+            val message = uri.getQueryParameter("message")?.let(Uri::decode)
+            val transId = uri.getQueryParameter("transId")
+            val orderId = uri.getQueryParameter("orderId")
+            val amount = uri.getQueryParameter("amount")?.toLongOrNull()
+            val formattedAmount = amount?.let { amt ->
+                runCatching { currencyFormatter.format(amt) }.getOrNull()
             }
-        }
-    }
-    
-    // Mở ZaloPay qua payUrl (fallback browser nếu app chưa cài)
-    LaunchedEffect(state.depositPayUrl) {
-        state.depositPayUrl?.let { payUrl ->
-            try {
-                // Ưu tiên mở app ZaloPay
-                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(payUrl))
-                intent.setPackage("com.vng.zalopay")
-                context.startActivity(intent)
-            } catch (e: Exception) {
-                // Fallback: mở trình duyệt
-                try {
-                    val webIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(payUrl))
-                    context.startActivity(webIntent)
-                } catch (e2: Exception) {
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Không thể mở liên kết thanh toán.")
+            val displayMessage = when {
+                resultCode == "0" -> buildString {
+                    append("Thanh toan MoMo thanh cong")
+                    formattedAmount?.let { append(": +$it VND") }
+                    transId?.let {
+                        append("\nMa giao dich: $it")
+                    } ?: orderId?.let {
+                        append("\nMa don: $it")
                     }
                 }
-            } finally {
-                // Dọn state để tránh tự mở lại
-                viewModel.clearDepositPayUrl()
+                else -> message?.takeIf { it.isNotBlank() }
+                    ?: "Thanh toan MoMo that bai (ma $resultCode)"
             }
+            android.util.Log.d(
+                "WalletScreen",
+                "Processed deep link from MoMo (partner=$partnerCode, result=$resultCode, transId=$transId)"
+            )
+            snackbarHostState.showSnackbar(
+                message = displayMessage,
+                duration = SnackbarDuration.Short
+            )
+            viewModel.refresh()
+            viewModel.markDepositResultHandled()
+            onConsumeDeepLink()
         }
     }
     
-    // Show deposit dialog
+    LaunchedEffect(state.pendingDeposit) {
+        state.pendingDeposit?.let { deposit ->
+            val primaryDeeplink = deposit.deeplink.takeIf { it.isNotBlank() }
+            val fallbackUrl = deposit.payUrl.takeIf { it.isNotBlank() }
+            val targetUri = primaryDeeplink ?: fallbackUrl
+
+            if (targetUri != null) {
+                val launchResult = runCatching {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUri)).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                    true
+                }.onFailure { throwable ->
+                    android.util.Log.e("WalletScreen", "Unable to open MoMo deeplink", throwable)
+                }.getOrDefault(false)
+
+                if (!launchResult) {
+                    val backupUrl = fallbackUrl ?: primaryDeeplink
+                    val openedFallback = backupUrl?.let { url ->
+                        runCatching {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(intent)
+                            true
+                        }.getOrElse {
+                            android.util.Log.e("WalletScreen", "Unable to open fallback URL", it)
+                            false
+                        }
+                    } ?: false
+
+                    if (!openedFallback) {
+                        snackbarHostState.showSnackbar(
+                            message = "Kh�ng th? m? ?ng d?ng MoMo. Vui l�ng ki?m tra v� th? l?i.",
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                }
+            } else {
+                snackbarHostState.showSnackbar(
+                    message = "Kh�ng t�m th?y th�ng tin thanh to�n.",
+                    duration = SnackbarDuration.Short
+                )
+            }
+
+            viewModel.clearPendingDeposit()
+
+            scope.launch {
+                viewModel.refresh()
+                snackbarHostState.showSnackbar(
+                    message = "So du vi da duoc cap nhat!",
+                    duration = SnackbarDuration.Short
+                )
+            }
+        }
+    }
+    DisposableEffect(lifecycleOwner, state.awaitingDepositResult) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME && state.awaitingDepositResult) {
+                scope.launch {
+                    viewModel.refresh()
+                    snackbarHostState.showSnackbar(
+                        message = "Dang kiem tra giao dich MoMo...",
+                        duration = SnackbarDuration.Short
+                    )
+                }
+                viewModel.markDepositResultHandled()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    // Auto-refresh wallet when screen comes to foreground (e.g., after MoMo payment)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                android.util.Log.d("WalletScreen", "Screen resumed, refreshing wallet data")
+                scope.launch {
+                    delay(500) // Small delay to ensure navigation is complete
+                    viewModel.refresh()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+    
     if (state.showDepositDialog) {
         DepositDialog(
             onDismiss = { viewModel.hideDepositDialog() },
-            onConfirm = { amount ->
-                viewModel.depositFunds(amount)
-            }
+            onConfirm = { amount -> viewModel.depositFunds(amount) }
         )
     }
 
@@ -164,18 +220,24 @@ fun WalletScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Text(
+                    ResponsiveText(
                         text = "Quản lý Ví",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
+                    ResponsiveText(
                         text = "Quản lý số dư cho đấu giá và mua sắm\ntrên EV Market",
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 14.sp,
+                            lineHeight = 20.sp
+                        ),
                         color = TextSecondary,
-                        lineHeight = 20.sp
+                        maxLines = 2
                     )
                 }
             }
@@ -832,7 +894,7 @@ private fun DepositDialog(
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = "Thanh toán qua ZaloPay",
+                        text = "Thanh toán qua MoMo",
                         fontSize = 12.sp,
                         color = TextSecondary
                     )
@@ -877,3 +939,13 @@ private fun DepositDialog(
         shape = RoundedCornerShape(16.dp)
     )
 }
+
+
+
+
+
+
+
+
+
+

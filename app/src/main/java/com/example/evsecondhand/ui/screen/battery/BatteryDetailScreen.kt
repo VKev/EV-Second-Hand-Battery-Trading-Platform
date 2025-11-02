@@ -56,6 +56,10 @@ import com.example.evsecondhand.data.model.BatterySpecifications
 import com.example.evsecondhand.data.model.Seller
 import com.example.evsecondhand.ui.theme.PrimaryGreen
 import com.example.evsecondhand.ui.theme.TextSecondary
+import com.example.evsecondhand.ui.components.ResponsiveText
+import com.example.evsecondhand.ui.components.ModernPrimaryButton
+import com.example.evsecondhand.ui.components.ModernOutlinedButton
+import com.example.evsecondhand.ui.components.ExpandableCard
 import com.example.evsecondhand.ui.viewmodel.BatteryDetailState
 import com.example.evsecondhand.ui.viewmodel.BatteryDetailViewModel
 import java.text.NumberFormat
@@ -205,7 +209,8 @@ private fun BatteryDetailContent(
         item {
             ActionButtonsRow(
                 battery = battery,
-                onPaymentDashboard = onPaymentDashboard
+                onPaymentDashboard = onPaymentDashboard,
+                onBidClick = onBidClick
             )
         }
     }
@@ -293,22 +298,24 @@ private fun TitleSection(
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
+        ResponsiveText(
             text = title,
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
-        Text(
+        ResponsiveText(
             text = currencyFormatter.format(price),
             style = MaterialTheme.typography.headlineMedium.copy(
                 fontWeight = FontWeight.Black,
                 color = PrimaryGreen
-            )
+            ),
+            maxLines = 1
         )
-        Text(
+        ResponsiveText(
             text = subtitle,
-            style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary)
+            style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary),
+            maxLines = 1
         )
     }
 }
@@ -370,14 +377,16 @@ private fun MetricCard(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(
+            ResponsiveText(
                 text = title,
                 style = MaterialTheme.typography.labelMedium,
-                color = TextSecondary
+                color = TextSecondary,
+                maxLines = 1
             )
-            Text(
+            ResponsiveText(
                 text = value,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                maxLines = 2
             )
         }
     }
@@ -418,14 +427,18 @@ private fun SpecRow(label: String, value: String?) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
+            ResponsiveText(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
-                color = TextSecondary
+                color = TextSecondary,
+                maxLines = 1,
+                modifier = Modifier.weight(0.4f)
             )
-            Text(
+            ResponsiveText(
                 text = value,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                maxLines = 2,
+                modifier = Modifier.weight(0.6f)
             )
         }
         Divider(modifier = Modifier
@@ -592,11 +605,11 @@ private fun DescriptionSection(description: String) {
 @Composable
 private fun ActionButtonsRow(
     battery: Battery?,
-    onPaymentDashboard: (Battery) -> Unit
+    onPaymentDashboard: (Battery) -> Unit,
+    onBidClick: () -> Unit
 ) {
     val isAuctionItem = battery?.isAuction == true ||
         battery?.status?.contains("AUCTION", ignoreCase = true) == true
-    val primaryActionLabel = if (isAuctionItem) "Dau gia" else "Mua ngay"
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -611,12 +624,26 @@ private fun ActionButtonsRow(
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
         ) {
             Text(
-                text = primaryActionLabel,
+                text = "Mua ngay",
                 style = MaterialTheme.typography.labelLarge.copy(
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
             )
+        }
+
+        if (isAuctionItem) {
+            OutlinedButton(
+                onClick = onBidClick,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryGreen)
+            ) {
+                Text(
+                    text = "Đấu giá",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                )
+            }
         }
 
         OutlinedButton(

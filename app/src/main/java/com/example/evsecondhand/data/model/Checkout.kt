@@ -6,7 +6,8 @@ import kotlinx.serialization.Serializable
 data class CheckoutRequest(
     val listingId: String,
     val listingType: String, // "VEHICLE" or "BATTERY"
-    val paymentMethod: String // "ZALOPAY" or "WALLET"
+    val paymentMethod: String, // "MOMO" or "WALLET"
+    val redirectUrl: String? = null
 )
 
 @Serializable
@@ -18,7 +19,7 @@ data class CheckoutResponse(
 @Serializable
 data class CheckoutData(
     val transactionId: String,
-    val paymentInfo: CheckoutPaymentInfo? = null, // For ZaloPay payment
+    val paymentInfo: CheckoutPaymentInfo? = null, // For external gateway payment
     val paymentDetail: CheckoutPaymentDetail? = null // For WALLET payment
 )
 
@@ -39,7 +40,7 @@ data class CheckoutPaymentInfo(
 
 @Serializable
 data class CheckoutPaymentDetail(
-    val gateway: String? = null, // "ZALOPAY" or "WALLET"
+    val gateway: String? = null, // "MOMO" or "WALLET"
     val paymentDetail: String? = null, // JSON string or payment info
     val amount: Long? = null,
     val payUrl: String? = null
@@ -51,6 +52,6 @@ enum class ListingType(val value: String) {
 }
 
 enum class PaymentMethod(val value: String, val displayName: String) {
-    ZALOPAY("ZALOPAY", "Ví ZaloPay"),
+    MOMO("MOMO", "Ví MoMo"),
     WALLET("WALLET", "Ví EV Market")
 }

@@ -13,74 +13,38 @@ class ProductRepository(
         private const val TAG = "ProductRepository"
     }
     
-    suspend fun getBatteries(page: Int, limit: Int = 10): Result<List<Battery>> {
+    suspend fun getBatteries(page: Int, limit: Int = 100): Result<List<Battery>> {
         return try {
             Log.d(TAG, "Fetching batteries - page: $page, limit: $limit")
-            
-            // Fetch multiple pages to ensure we get AVAILABLE items
-            val allBatteries = mutableListOf<Battery>()
-            var currentPage = page
-            var hasMore = true
-            var pagesChecked = 0
-            val maxPagesToCheck = 10 // Check up to 5 pages to find AVAILABLE items
-            
-            while (hasMore && pagesChecked < maxPagesToCheck && allBatteries.size < limit) {
-                val response = productApi.getBatteries(currentPage, limit)
-                Log.d(TAG, "Page $currentPage - received: ${response.data.batteries.size} items")
-                
-                // Filter AVAILABLE batteries from this page
-                val availableFromPage = response.data.batteries.filter { 
-                    it.status.equals("AVAILABLE", ignoreCase = true)
-                }
-                
-                allBatteries.addAll(availableFromPage)
-                Log.d(TAG, "Page $currentPage - AVAILABLE: ${availableFromPage.size}, Total collected: ${allBatteries.size}")
-                
-                // Stop if no more pages or we got enough items
-                hasMore = response.data.batteries.size == limit && currentPage < response.data.totalPages
-                currentPage++
-                pagesChecked++
+            val response = productApi.getBatteries(page, limit)
+            val batteries = response.data.batteries.filter { battery ->
+                val normalizedStatus = battery.status.uppercase()
+                // Include AUCTION_LIVE, AVAILABLE, and other auction statuses
+                normalizedStatus == "AVAILABLE" || 
+                normalizedStatus == "AUCTION_LIVE" ||
+                normalizedStatus.contains("AUCTION")
             }
-            
-            Log.d(TAG, "Final result: ${allBatteries.size} AVAILABLE batteries from $pagesChecked pages")
-            Result.success(allBatteries.take(limit))
+            Log.d(TAG, "Batteries fetched: ${batteries.size} items after filtering by status")
+            Result.success(batteries)
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching batteries", e)
             Result.failure(e)
         }
     }
     
-    suspend fun getVehicles(page: Int, limit: Int = 10): Result<List<Vehicle>> {
+    suspend fun getVehicles(page: Int, limit: Int = 100): Result<List<Vehicle>> {
         return try {
             Log.d(TAG, "Fetching vehicles - page: $page, limit: $limit")
-            
-            // Fetch multiple pages to ensure we get AVAILABLE items
-            val allVehicles = mutableListOf<Vehicle>()
-            var currentPage = page
-            var hasMore = true
-            var pagesChecked = 0
-            val maxPagesToCheck = 5 // Check up to 5 pages to find AVAILABLE items
-            
-            while (hasMore && pagesChecked < maxPagesToCheck && allVehicles.size < limit) {
-                val response = productApi.getVehicles(currentPage, limit)
-                Log.d(TAG, "Page $currentPage - received: ${response.data.vehicles.size} items")
-                
-                // Filter AVAILABLE vehicles from this page
-                val availableFromPage = response.data.vehicles.filter { 
-                    it.status.equals("AVAILABLE", ignoreCase = true)
-                }
-                
-                allVehicles.addAll(availableFromPage)
-                Log.d(TAG, "Page $currentPage - AVAILABLE: ${availableFromPage.size}, Total collected: ${allVehicles.size}")
-                
-                // Stop if no more pages or we got enough items
-                hasMore = response.data.vehicles.size == limit && currentPage < response.data.totalPages
-                currentPage++
-                pagesChecked++
+            val response = productApi.getVehicles(page, limit)
+            val vehicles = response.data.vehicles.filter { vehicle ->
+                val normalizedStatus = vehicle.status.uppercase()
+                // Include AUCTION_LIVE, AVAILABLE, and other auction statuses
+                normalizedStatus == "AVAILABLE" || 
+                normalizedStatus == "AUCTION_LIVE" ||
+                normalizedStatus.contains("AUCTION")
             }
-            
-            Log.d(TAG, "Final result: ${allVehicles.size} AVAILABLE vehicles from $pagesChecked pages")
-            Result.success(allVehicles.take(limit))
+            Log.d(TAG, "Vehicles fetched: ${vehicles.size} items after filtering by status")
+            Result.success(vehicles)
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching vehicles", e)
             Result.failure(e)

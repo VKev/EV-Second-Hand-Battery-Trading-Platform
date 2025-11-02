@@ -66,7 +66,8 @@ enum class TransactionStatus {
 // Deposit Models
 @Serializable
 data class DepositRequest(
-    val amount: Int
+    val amount: Int,
+    val redirectUrl: String? = null
 )
 
 @Serializable
