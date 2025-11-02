@@ -60,6 +60,7 @@ import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun SellerCreateListingScreen(
@@ -726,6 +727,17 @@ private fun VehicleForm(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                         )
                     }
+
+                    // Auction End Time Picker
+                    EnhancedDateTimePicker(
+                        label = "Thời gian kết thúc đấu giá",
+                        icon = Icons.Default.Schedule,
+                        displayValue = auctionEndsAtDisplay,
+                        onDateTimeSelected = { isoDateTime, displayText ->
+                            auctionEndsAt = isoDateTime
+                            auctionEndsAtDisplay = displayText
+                        }
+                    )
                 }
             }
         }
@@ -1592,6 +1604,80 @@ private const val MIN_CURRENCY_VALUE = 1_000L
 private fun digitsOnly(input: String, maxLength: Int? = null): String {
     val filtered = input.filter { it.isDigit() }
     return maxLength?.let { filtered.take(it) } ?: filtered
+}
+
+@Composable
+private fun EnhancedDateTimePicker(
+    label: String,
+    icon: ImageVector,
+    displayValue: String,
+    onDateTimeSelected: (isoDateTime: String, displayText: String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val zoneId = ZoneId.systemDefault()
+    val displayFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale("vi", "VN"))
+    
+    OutlinedCard(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+    ) {
+        Surface(
+            onClick = {
+                openAuctionPicker(context, zoneId, displayFormatter, onDateTimeSelected)
+            },
+            color = Color.Transparent,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Text(
+                        text = displayValue.ifBlank { "Chọn thời gian" },
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (displayValue.isBlank()) {
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                        fontWeight = if (displayValue.isBlank()) FontWeight.Normal else FontWeight.Medium
+                    )
+                }
+                
+                Icon(
+                    imageVector = Icons.Default.DateRange,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
 }
 
 private fun openAuctionPicker(

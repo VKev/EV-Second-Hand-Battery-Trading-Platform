@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.evsecondhand.ui.theme.PrimaryGreen
 import com.example.evsecondhand.ui.theme.TextSecondary
+import com.example.evsecondhand.ui.components.ResponsiveText
 
 @Composable
 fun LoadingCard() {
@@ -38,11 +39,14 @@ fun LoadingCard() {
                 strokeWidth = 4.dp
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Text(
+            ResponsiveText(
                 text = "Đang tải...",
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                ),
                 color = TextSecondary,
-                fontWeight = FontWeight.Medium
+                maxLines = 1
             )
         }
     }
@@ -87,21 +91,27 @@ fun ErrorCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            Text(
+            ResponsiveText(
                 text = "Đã xảy ra lỗi",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFFC62828)
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                ),
+                color = Color(0xFFC62828),
+                maxLines = 1
             )
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            Text(
+            ResponsiveText(
                 text = message,
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp
+                ),
                 color = Color(0xFF6D4C41),
                 textAlign = TextAlign.Center,
-                lineHeight = 20.sp
+                maxLines = 3
             )
             
             Spacer(modifier = Modifier.height(20.dp))
@@ -164,12 +174,15 @@ fun EmptyStateCard(message: String) {
             
             Spacer(modifier = Modifier.height(20.dp))
             
-            Text(
+            ResponsiveText(
                 text = message,
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                ),
                 color = TextSecondary,
                 textAlign = TextAlign.Center,
-                fontWeight = FontWeight.Medium
+                maxLines = 2
             )
         }
     }

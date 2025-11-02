@@ -28,6 +28,7 @@ import com.example.evsecondhand.data.model.Battery
 import com.example.evsecondhand.data.model.Vehicle
 import com.example.evsecondhand.ui.theme.PrimaryGreen
 import com.example.evsecondhand.ui.theme.TextSecondary
+import com.example.evsecondhand.ui.components.ResponsiveText
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -125,14 +126,16 @@ fun ModernBatteryCard(
                 }
                 
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
+                    ResponsiveText(
                         text = battery.title,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.ExtraBold,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 18.sp,
+                            lineHeight = 24.sp
+                        ),
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.height(48.dp),
-                        lineHeight = 24.sp
+                        modifier = Modifier.height(48.dp)
                     )
                     
                     Spacer(modifier = Modifier.height(12.dp))
@@ -158,11 +161,14 @@ fun ModernBatteryCard(
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     // Brand and year
-                    Text(
+                    ResponsiveText(
                         text = "${battery.brand} • ${battery.year}",
-                        fontSize = 13.sp,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        ),
                         color = TextSecondary,
-                        fontWeight = FontWeight.Medium
+                        maxLines = 1
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
@@ -298,14 +304,16 @@ fun ModernVehicleCard(
                 }
                 
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
+                    ResponsiveText(
                         text = vehicle.title,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.ExtraBold,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 18.sp,
+                            lineHeight = 24.sp
+                        ),
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.height(48.dp),
-                        lineHeight = 24.sp
+                        modifier = Modifier.height(48.dp)
                     )
                     
                     Spacer(modifier = Modifier.height(12.dp))
@@ -446,18 +454,24 @@ fun SectionHeader(
             Spacer(modifier = Modifier.width(16.dp))
             
             Column(modifier = Modifier.weight(1f)) {
-                Text(
+                ResponsiveText(
                     text = title,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 0.5.sp
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 20.sp,
+                        letterSpacing = 0.5.sp
+                    ),
+                    maxLines = 1
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
+                ResponsiveText(
                     text = subtitle,
-                    fontSize = 13.sp,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp
+                    ),
                     color = TextSecondary,
-                    lineHeight = 18.sp
+                    maxLines = 2
                 )
             }
         }

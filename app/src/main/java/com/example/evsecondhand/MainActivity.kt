@@ -40,6 +40,14 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        android.util.Log.d("MainActivity", "onNewIntent called with: ${intent.dataString}")
+        dispatchDeepLinkIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        android.util.Log.d("MainActivity", "onResume called")
+        // Process deep link again when activity resumes (in case it was in background)
         dispatchDeepLinkIntent(intent)
     }
 
