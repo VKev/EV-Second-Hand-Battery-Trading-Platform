@@ -1,6 +1,8 @@
 ﻿package com.example.evsecondhand.ui.navigation
 
 import android.app.Application
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -33,8 +35,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navDeepLink
 import androidx.navigation.navArgument
 import com.example.evsecondhand.ui.screen.ProfileScreen
+import com.example.evsecondhand.ui.screen.PurchaseHistoryScreen
 import com.example.evsecondhand.ui.screen.WalletScreen
 import com.example.evsecondhand.ui.screen.auction.AuctionScreen
 import com.example.evsecondhand.ui.screen.auctiondetail.AuctionDetailScreen
@@ -53,6 +57,8 @@ import com.example.evsecondhand.ui.viewmodel.HomeViewModel
 import com.example.evsecondhand.ui.viewmodel.PaymentViewModel
 import com.example.evsecondhand.ui.viewmodel.SellerCreateListingViewModel
 import com.example.evsecondhand.ui.viewmodel.SellerDashboardViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
 
 sealed class BottomNavItem(
     val route: String,
@@ -66,12 +72,49 @@ sealed class BottomNavItem(
     object Profile : BottomNavItem(Screen.Profile.route, "H\u1ED3 s\u01A1", Icons.Default.Person)
 }
 
+private const val WALLET_DEEP_LINK_RESULT_KEY = "wallet_deep_link_uri"
+
 @Composable
 fun AppNavigation(
     authViewModel: AuthViewModel,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    deepLinkFlow: Flow<Intent>? = null
 ) {
     val navController = rememberNavController()
+    LaunchedEffect(deepLinkFlow) {
+        deepLinkFlow?.let { flow ->
+            flow.collectLatest { intent ->
+                val uri = intent.data
+                val handledByCustom = uri?.let { data ->
+                    handleWalletDeepLink(navController, data)
+                } ?: false
+
+                if (handledByCustom) {
+                    android.util.Log.d(
+                        "AppNavigation",
+                        "Handled wallet deep link from intent: ${intent.dataString}"
+                    )
+                    return@collectLatest
+                }
+
+                val handledByNav = navController.handleDeepLink(intent)
+                android.util.Log.d(
+                    "AppNavigation",
+                    "Deep link intent received: ${intent.dataString}, handledByNav=$handledByNav"
+                )
+
+                if (!handledByNav) {
+                    val fallbackHandled = handleGenericDeepLink(navController, uri)
+                    if (!fallbackHandled) {
+                        android.util.Log.w(
+                            "AppNavigation",
+                            "Unhandled deep link data=${intent.dataString}"
+                        )
+                    }
+                }
+            }
+        }
+    }
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
     val startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route
 
@@ -123,7 +166,10 @@ fun AppNavigation(
                 )
             }
 
-            composable(Screen.Home.route) {
+            composable(
+                Screen.Home.route,
+                deepLinks = listOf(navDeepLink { uriPattern = "evmarket://app" })
+            ) {
                 HomeScreen(
                     homeViewModel = homeViewModel,
                     onBatteryClick = { batteryId ->
@@ -337,12 +383,41 @@ fun AppNavigation(
                 )
             }
 
-            composable(Screen.Wallet.route) {
-                WalletScreen()
+            composable(
+                Screen.Wallet.route,
+                deepLinks = listOf(
+                    navDeepLink {
+                        uriPattern =
+                            "evmarket://wallet{?partnerCode,resultCode,orderId,message,amount,requestId,extraData,payType,transId}"
+                    }
+                )
+            ) { backStackEntry ->
+                val deepLinkUri by backStackEntry
+                    .savedStateHandle
+                    .getStateFlow<String?>(WALLET_DEEP_LINK_RESULT_KEY, null)
+                    .collectAsState()
+
+                WalletScreen(
+                    deepLinkUri = deepLinkUri?.let(Uri::parse),
+                    onConsumeDeepLink = {
+                        backStackEntry.savedStateHandle.remove<String>(WALLET_DEEP_LINK_RESULT_KEY)
+                    }
+                )
             }
 
             composable(Screen.Profile.route) {
-                ProfileScreen(authViewModel = authViewModel)
+                ProfileScreen(
+                    authViewModel = authViewModel,
+                    onNavigateToPurchaseHistory = {
+                        navController.navigate(Screen.PurchaseHistory.route)
+                    }
+                )
+            }
+
+            composable(Screen.PurchaseHistory.route) {
+                PurchaseHistoryScreen(
+                    onBackClick = { navController.popBackStack() }
+                )
             }
         }
     }
@@ -450,3 +525,58 @@ fun BottomNavigationBar(
     }
 }
 
+private fun handleWalletDeepLink(
+    navController: NavHostController,
+    uri: Uri
+): Boolean {
+    val scheme = uri.scheme?.lowercase()
+    if (scheme != "evmarket") {
+        return false
+    }
+
+    val partnerCode = uri.getQueryParameter("partnerCode")?.lowercase()
+    val host = uri.host?.lowercase()
+    val isMoMoRedirect = partnerCode == "momo"
+    val isWalletHost = host == "wallet"
+
+    if (!isMoMoRedirect && !isWalletHost) {
+        return false
+    }
+
+    navController.navigate(Screen.Wallet.route) {
+        launchSingleTop = true
+    }
+
+    navController.currentBackStackEntry
+        ?.savedStateHandle
+        ?.set(WALLET_DEEP_LINK_RESULT_KEY, uri.toString())
+
+    android.util.Log.d(
+        "AppNavigation",
+        "Routing deep link to Wallet (partnerCode=$partnerCode, resultCode=${uri.getQueryParameter("resultCode")})"
+    )
+
+    return true
+}
+
+private fun handleGenericDeepLink(
+    navController: NavHostController,
+    uri: Uri?
+): Boolean {
+    val host = uri?.host?.lowercase() ?: return false
+    return when (host) {
+        "wallet" -> {
+            navController.navigate(Screen.Wallet.route) {
+                launchSingleTop = true
+            }
+            true
+        }
+        "app" -> {
+            navController.navigate(Screen.Home.route) {
+                launchSingleTop = true
+            }
+            true
+        }
+        else -> false
+    }
+}

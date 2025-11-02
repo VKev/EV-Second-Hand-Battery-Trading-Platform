@@ -5,6 +5,15 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- Query for MoMo app -->
+    <queries>
+        <package android:name="vn.momo.platform.test" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="evmarket" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -27,7 +36,7 @@
             </intent-filter>
             
             <!-- Deep link intent filters for MoMo payment returns -->
-            <intent-filter android:autoVerify="true">
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
@@ -36,9 +45,23 @@
                 <data 
                     android:scheme="evmarket"
                     android:host="app" />
+            </intent-filter>
+            
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                
                 <data 
                     android:scheme="evmarket"
                     android:host="wallet" />
+            </intent-filter>
+            
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                
                 <data 
                     android:scheme="evmarket"
                     android:host="checkout"

@@ -4,6 +4,7 @@ import com.example.evsecondhand.data.model.AuctionDetailResponse
 import com.example.evsecondhand.data.model.AuctionLiveResponse
 import com.example.evsecondhand.data.model.AuctionStatusResponse
 import com.example.evsecondhand.data.model.BidRequest
+import com.example.evsecondhand.data.model.AuctionDepositRequest
 import com.example.evsecondhand.data.model.AuctionDepositResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -33,7 +34,8 @@ interface AuctionApiService {
     @POST("auctions/{listingType}/{listingId}/deposit")
     suspend fun placeDeposit(
         @Path("listingType") listingType: String,
-        @Path("listingId") listingId: String
+        @Path("listingId") listingId: String,
+        @Body request: AuctionDepositRequest
     ): AuctionDepositResponse
 
     @POST("auctions/{listingType}/{listingId}/bids")
