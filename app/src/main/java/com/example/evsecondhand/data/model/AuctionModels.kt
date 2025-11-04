@@ -26,6 +26,11 @@ data class AuctionDepositResponse(
 )
 
 @Serializable
+data class AuctionDepositRequest(
+    val amount: Int
+)
+
+@Serializable
 data class AuctionLiveResponse(
     val message: String? = null,
     val data: JsonElement? = JsonNull
