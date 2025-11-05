@@ -12,12 +12,16 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -349,29 +353,26 @@ private fun GalleryThumbnail(
 }
 
 @Composable
-public fun VerifiedBadge(modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier,
-        color = PrimaryGreen.copy(alpha = 0.12f),
-        shape = RoundedCornerShape(40),
-        border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.25f))
+fun VerifiedBadge(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+            .background(PrimaryGreen)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Verified,
-                contentDescription = null,
-                tint = PrimaryGreen,
-                modifier = Modifier.size(18.dp)
-            )
-            Text(
-                text = "Đã kiểm duyệt",
-                style = MaterialTheme.typography.labelMedium.copy(color = PrimaryGreen)
-            )
-        }
+        Icon(
+            imageVector = Icons.Default.Verified,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(16.dp)
+        )
+        Text(
+            text = "Đã kiểm duyệt",
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold,
+                color = Color.White)
+        )
     }
 }
 
@@ -386,37 +387,47 @@ public fun VehicleOverviewCard(vehicle: Vehicle) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = vehicle.title,
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = formatCurrency(vehicle.price),
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                color = PrimaryGreen
-            )
-        )
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            InfoChip(label = "Hãng", value = vehicle.brand)
-            InfoChip(label = "Loại", value = vehicle.model)
-            InfoChip(label = "Năm", value = vehicle.year.toString())
-            InfoChip(
-                label = "Số km",
-                value = "${mileageFormatter.format(vehicle.mileage)} km"
-            )
-        }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(
+                    text = vehicle.title,
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Text(
+                    text = formatCurrency(vehicle.price),
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        color = PrimaryGreen
+                    ),
+                    maxLines = 1,
+                    modifier = Modifier
+                        .padding(start = 12.dp)
+                        .wrapContentWidth(Alignment.End)
+                )
+            }
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                InfoChip(label = "Hãng", value = vehicle.brand)
+                InfoChip(label = "Loại", value = vehicle.model)
+                InfoChip(label = "Năm",  value = vehicle.year.toString())
+                InfoChip(label = "Số km", value = "${mileageFormatter.format(vehicle.mileage)} km")
+            }
         }
     }
+
 }
 
 @Composable
@@ -436,10 +447,11 @@ private fun InfoChip(label: String, value: String?) {
 }
 
 @Composable
-public fun QuickHighlightsSection(vehicle: Vehicle) {
-    val range = vehicle.specifications?.batteryAndCharging?.range ?: "--"
-    val topSpeed = vehicle.specifications?.performance?.topSpeed ?: "--"
-    val acceleration = vehicle.specifications?.performance?.acceleration ?: "--"
+fun QuickHighlightsSection(vehicle: Vehicle) {
+    // Ví dụ: "430 miles (EPA)" → tách thành "430 miles" + "(EPA)"
+    val (rangeMain, rangeNote) = splitValueNote(vehicle.specifications?.batteryAndCharging?.range ?: "--")
+    val (speedMain, speedNote) = splitValueNote(vehicle.specifications?.performance?.topSpeed ?: "--")
+    val (accelMain, accelNote) = splitValueNote(vehicle.specifications?.performance?.acceleration ?: "--")
 
     Card(
         shape = RoundedCornerShape(24.dp),
@@ -449,38 +461,52 @@ public fun QuickHighlightsSection(vehicle: Vehicle) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             HighlightStatCard(
                 label = "Quãng đường",
-                value = range,
-                modifier = Modifier.weight(1f)
+                value = rangeMain,
+                secondary = rangeNote,
+                modifier = Modifier
+                    .weight(1f)
+                    .widthIn(min = 0.dp)
             )
+            VerticalDividerSlim()
+
             HighlightStatCard(
                 label = "Tốc độ tối đa",
-                value = topSpeed,
-                modifier = Modifier.weight(1f)
+                value = speedMain,
+                secondary = speedNote,
+                modifier = Modifier
+                    .weight(1f)
+                    .widthIn(min = 0.dp)
             )
+            VerticalDividerSlim()
+
             HighlightStatCard(
-                label = "0-100 km/h",
-                value = acceleration,
-                modifier = Modifier.weight(1f)
+                label = "0–100 km/h",
+                value = accelMain,
+                secondary = accelNote,
+                modifier = Modifier
+                    .weight(1f)
+                    .widthIn(min = 0.dp)
             )
         }
     }
 }
 
 @Composable
-public fun HighlightStatCard(
+fun HighlightStatCard(
     label: String,
     value: String,
+    secondary: String? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
             text = label,
@@ -488,10 +514,41 @@ public fun HighlightStatCard(
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = secondary ?: " ",   // nếu null thì render space
+            style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary),
+            maxLines = 1
         )
     }
 }
+
+@Composable
+private fun VerticalDividerSlim() {
+    Box(
+        modifier = Modifier
+            .fillMaxHeight()
+            .width(1.dp)
+            .padding(vertical = 6.dp)
+            .background(
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+                RoundedCornerShape(1.dp)
+            )
+    )
+}
+
+/** Tách "430 miles (EPA)" → "430 miles" + "(EPA)"; nếu không có ngoặc thì note = null */
+private fun splitValueNote(raw: String): Pair<String, String?> {
+    val regex = Regex("""^(.*?)(\s*\(.*\))$""")
+    val m = regex.find(raw)
+    return if (m != null) {
+        m.groupValues[1].trim() to m.groupValues[2].trim()
+    } else raw to null
+}
+
 
 @Composable
 private fun AuctionSummaryCard(vehicle: Vehicle) {
@@ -918,14 +975,21 @@ private fun SellerContactSection(seller: Seller) {
 @Composable
 public fun DescriptionSection(description: String) {
     Card(
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            Text(
+                text = "Mô tả",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+            )
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodyMedium,
@@ -963,20 +1027,6 @@ private fun ActionButtonsRow(
                     fontWeight = FontWeight.Bold
                 )
             )
-        }
-
-        if (isAuctionItem) {
-            OutlinedButton(
-                onClick = onBidClick,
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryGreen)
-            ) {
-                Text(
-                    text = "Đấu giá",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
-                )
-            }
         }
 
         OutlinedButton(
@@ -1019,8 +1069,8 @@ private fun ErrorState(
 }
 
 private fun formatCurrency(value: Int): String {
-    val formatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
-    return formatter.format(value)
+    val formatter = NumberFormat.getNumberInstance(Locale("vi", "VN"))
+    return formatter.format(value) + " đ"
 }
 
 private fun formatAuctionCountdown(auctionEndsAt: String?): String? {

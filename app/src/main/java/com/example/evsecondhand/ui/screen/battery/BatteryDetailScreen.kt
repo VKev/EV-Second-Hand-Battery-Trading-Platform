@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -271,7 +273,7 @@ private fun VerifiedBadge(modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(50))
-            .background(PrimaryGreen.copy(alpha = 0.15f))
+            .background(PrimaryGreen)
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -279,12 +281,13 @@ private fun VerifiedBadge(modifier: Modifier = Modifier) {
         Icon(
             imageVector = Icons.Default.Verified,
             contentDescription = null,
-            tint = PrimaryGreen,
+            tint = Color.White,
             modifier = Modifier.size(16.dp)
         )
         Text(
             text = "Đã kiểm duyệt",
-            style = MaterialTheme.typography.labelMedium.copy(color = PrimaryGreen)
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold,
+                color = Color.White)
         )
     }
 }
@@ -295,29 +298,47 @@ private fun TitleSection(
     price: Int,
     subtitle: String
 ) {
-    val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+    val currencyFormatter = NumberFormat.getNumberInstance(Locale("vi", "VN"))
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top // giá canh theo đầu title
+    ) {
+        Column(
+            modifier = Modifier
+                .weight(1f), // nhường chỗ cho giá
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            ResponsiveText(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            ResponsiveText(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
         ResponsiveText(
-            text = title,
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        ResponsiveText(
-            text = currencyFormatter.format(price),
+            text = currencyFormatter.format(price) + " đ",
             style = MaterialTheme.typography.headlineMedium.copy(
                 fontWeight = FontWeight.Black,
                 color = PrimaryGreen
             ),
-            maxLines = 1
-        )
-        ResponsiveText(
-            text = subtitle,
-            style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary),
-            maxLines = 1
+            maxLines = 1,
+            modifier = Modifier
+                .padding(start = 12.dp)
+                .widthIn(max = 140.dp)
+                .wrapContentWidth(Alignment.End),
+
         )
     }
+
+
 }
 
 @Composable
@@ -359,6 +380,7 @@ private fun MetricsSection(
             )
         }
     }
+    Spacer(modifier = Modifier.height(5.dp))
 }
 
 @Composable
@@ -455,8 +477,8 @@ private fun BatteryDepositSection(
     onBidClick: () -> Unit
 ) {
     val depositAmount = battery.depositAmount?.takeIf { it > 0 }
-    val formatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
-    val depositAmountText = depositAmount?.let { formatter.format(it) }
+    val formatter = NumberFormat.getNumberInstance(Locale("vi", "VN"))
+    val depositAmountText = depositAmount?.let { formatter.format(it) +" đ" }
 
     Card(
         shape = RoundedCornerShape(24.dp),
@@ -576,17 +598,21 @@ private fun SellerSection(seller: Seller) {
             }
         }
     }
+    Spacer(modifier = Modifier.height(8.dp))
 }
 
 @Composable
 private fun DescriptionSection(description: String) {
     Card(
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
@@ -601,6 +627,7 @@ private fun DescriptionSection(description: String) {
         }
     }
 }
+
 
 @Composable
 private fun ActionButtonsRow(
@@ -630,20 +657,6 @@ private fun ActionButtonsRow(
                     fontWeight = FontWeight.Bold
                 )
             )
-        }
-
-        if (isAuctionItem) {
-            OutlinedButton(
-                onClick = onBidClick,
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryGreen)
-            ) {
-                Text(
-                    text = "Đấu giá",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
-                )
-            }
         }
 
         OutlinedButton(
