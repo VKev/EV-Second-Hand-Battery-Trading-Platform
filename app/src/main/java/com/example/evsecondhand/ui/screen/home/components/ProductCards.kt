@@ -115,7 +115,7 @@ fun ModernBatteryCard(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    "Verified",
+                                    "Đã kiểm duyệt",
                                     color = Color.White,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
@@ -138,7 +138,7 @@ fun ModernBatteryCard(
                         modifier = Modifier.height(48.dp)
                     )
                     
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     
                     // Specs in colored chips
                     Row(
@@ -158,21 +158,9 @@ fun ModernBatteryCard(
                         }
                     }
                     
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    // Brand and year
-                    ResponsiveText(
-                        text = "${battery.brand} • ${battery.year}",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = TextSecondary,
-                        maxLines = 1
-                    )
-                    
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
+
                     // Price
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -186,8 +174,18 @@ fun ModernBatteryCard(
                             color = PrimaryGreen,
                             letterSpacing = (-0.5).sp
                         )
-                        
-                        // Arrow button
+
+//                    // Brand and year
+//                    ResponsiveText(
+//                        text = "${battery.brand} • ${battery.year}",
+//                        style = MaterialTheme.typography.bodyMedium.copy(
+//                            fontSize = 13.sp,
+//                            fontWeight = FontWeight.Medium
+//                        ),
+//                        color = TextSecondary,
+//                        maxLines = 1
+//                    )
+//                         Arrow button
                         Surface(
                             shape = CircleShape,
                             color = PrimaryGreen.copy(alpha = 0.15f),
@@ -293,7 +291,7 @@ fun ModernVehicleCard(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    "Verified",
+                                    "Đã kiểm duyệt",
                                     color = Color.White,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
@@ -316,35 +314,31 @@ fun ModernVehicleCard(
                         modifier = Modifier.height(48.dp)
                     )
                     
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         SpecChip(
                             icon = Icons.Default.DirectionsCar,
                             text = "${vehicle.brand} ${vehicle.model}",
                             color = Color(0xFF6C63FF)
                         )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+
                         SpecChip(
                             icon = Icons.Default.Speed,
                             text = "${NumberFormat.getInstance(Locale.US).format(vehicle.mileage)} km",
                             color = Color(0xFFFF9800)
                         )
+
                         SpecChip(
                             icon = Icons.Default.CalendarMonth,
                             text = "${vehicle.year}",
                             color = Color(0xFF00BCD4)
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Row(
