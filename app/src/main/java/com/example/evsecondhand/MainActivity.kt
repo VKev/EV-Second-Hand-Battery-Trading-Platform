@@ -2,11 +2,13 @@ package com.example.evsecondhand
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.evsecondhand.data.zalopay.ZaloPaySDKHelper
 import com.example.evsecondhand.ui.navigation.AppNavigation
 import com.example.evsecondhand.ui.theme.EVSecondHandTheme
 import com.example.evsecondhand.ui.viewmodel.AuthViewModel
@@ -22,8 +24,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
         dispatchDeepLinkIntent(intent)
         
+        ZaloPaySDKHelper.init()
+
         setContent {
             EVSecondHandTheme {
                 val homeViewModel: HomeViewModel = viewModel()
@@ -39,25 +44,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        setIntent(intent)
-        android.util.Log.d("MainActivity", "onNewIntent called with: ${intent.dataString}")
-        dispatchDeepLinkIntent(intent)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        android.util.Log.d("MainActivity", "onResume called")
-        // Process deep link again when activity resumes (in case it was in background)
         dispatchDeepLinkIntent(intent)
     }
 
     private fun dispatchDeepLinkIntent(intent: Intent?) {
-        if (intent?.action == Intent.ACTION_VIEW && intent.data != null) {
-            android.util.Log.d(
-                "MainActivity",
-                "Received deep link: ${intent.dataString}"
-            )
-            deepLinkEvents.tryEmit(intent)
+        intent?.let {
+            Log.d("MainActivity", "Dispatching deep link intent: ${it.data}")
+            deepLinkEvents.tryEmit(it)
         }
     }
 }

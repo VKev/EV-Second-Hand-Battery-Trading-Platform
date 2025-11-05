@@ -16,6 +16,11 @@ data class RegisterRequest(
 )
 
 @Serializable
+data class ExchangeCodeRequest(
+    val code: String
+)
+
+@Serializable
 data class AuthResponse(
     val message: String,
     val data: AuthData
