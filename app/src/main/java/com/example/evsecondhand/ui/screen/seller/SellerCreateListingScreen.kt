@@ -1,26 +1,18 @@
 package com.example.evsecondhand.ui.screen.seller
 
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
-import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -29,39 +21,24 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalContext
-import android.widget.Toast
-import androidx.compose.foundation.BorderStroke
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
-import com.example.evsecondhand.data.model.BatteryAndCharging
-import com.example.evsecondhand.data.model.Dimensions
-import com.example.evsecondhand.data.model.Performance
+import coil.compose.rememberAsyncImagePainter
+import kotlinx.coroutines.launch
 import com.example.evsecondhand.data.model.seller.BatterySpecifications
 import com.example.evsecondhand.data.model.seller.CreateBatteryRequest
 import com.example.evsecondhand.data.model.seller.CreateVehicleRequest
-import com.example.evsecondhand.data.model.VehicleSpecifications
-import com.example.evsecondhand.data.model.Warranty
+import com.example.evsecondhand.data.model.*
 import com.example.evsecondhand.ui.theme.*
 import com.example.evsecondhand.ui.viewmodel.SellerCreateListingViewModel
 import com.example.evsecondhand.ui.viewmodel.SellerCreateUiState
-import kotlinx.coroutines.delay
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SellerCreateListingScreen(
     viewModel: SellerCreateListingViewModel,
@@ -78,6 +55,7 @@ fun SellerCreateListingScreen(
             onNavigateToDashboard()
         }
     }
+    
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -85,260 +63,91 @@ fun SellerCreateListingScreen(
         }
     }
 
-    var activeTab by rememberSaveable { mutableStateOf(CreateListingTab.Vehicle) }
+    var activeTab by rememberSaveable { mutableStateOf(ListingType.Vehicle) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Animated gradient background
-        AnimatedGradientBackground()
-
-        Scaffold(
-            topBar = {
-                EnhancedCreateTopBar(
-                    activeTab = activeTab,
-                    onTabChange = { activeTab = it },
-                    onBackClick = onBackClick
-                )
-            },
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-            containerColor = Color.Transparent
-        ) { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 20.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
-            ) {
-                Spacer(modifier = Modifier.height(4.dp))
-
-                ManageListingShortcut(onClick = onNavigateToDashboard)
-
-                AnimatedContent(
-                    targetState = activeTab,
-                    transitionSpec = {
-                        fadeIn(animationSpec = tween(500)) + slideInVertically(
-                            animationSpec = tween(500),
-                            initialOffsetY = { it / 4 }
-                        ) togetherWith fadeOut(animationSpec = tween(300))
-                    },
-                    label = "tab_content"
-                ) { tab ->
-                    when (tab) {
-                        CreateListingTab.Vehicle -> VehicleForm(viewModel, uiState)
-                        CreateListingTab.Battery -> BatteryForm(viewModel, uiState)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun ManageListingShortcut(onClick: () -> Unit) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.5f)),
-        colors = ButtonDefaults.outlinedButtonColors(
-            contentColor = PrimaryGreen
-        )
-    ) {
-        Icon(
-            imageVector = Icons.Default.Dashboard,
-            contentDescription = null,
-            modifier = Modifier.size(20.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = "Quản lý tin đã đăng",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold
-        )
-    }
-}
-
-@Composable
-private fun AnimatedGradientBackground() {
-    val infiniteTransition = rememberInfiniteTransition(label = "background")
-    val offset by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(8000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "gradient"
-    )
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFE8F4FF).copy(alpha = 0.4f + offset * 0.2f),
-                        Color(0xFFF0F9FF),
-                        Color(0xFFFAFAFA)
-                    )
-                )
-            )
-    )
-}
-
-@Composable
-private fun EnhancedCreateTopBar(
-    activeTab: CreateListingTab,
-    onTabChange: (CreateListingTab) -> Unit,
-    onBackClick: () -> Unit
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = Color.White,
-        shadowElevation = 8.dp
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            // Header with back button
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Surface(
-                    modifier = Modifier.size(48.dp),
-                    shape = CircleShape,
-                    color = Color(0xFFF5F5F5),
-                    shadowElevation = 2.dp
-                ) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Đăng bán sản phẩm",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF1A1A1A)
+                    ) 
+                },
+                navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Quay lại",
-                            tint = TextPrimary
+                            contentDescription = "Back",
+                            tint = Color(0xFF1A1A1A)
                         )
                     }
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "Tạo tin mới",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = TextPrimary
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White
+                ),
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = Color(0xFFF8F9FA)
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            // Tab selector - Compact version
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ListingType.values().forEach { type ->
+                    FilterChip(
+                        selected = activeTab == type,
+                        onClick = { activeTab = type },
+                        label = { 
+                            Text(
+                                text = type.displayName,
+                                fontSize = 13.sp,
+                                fontWeight = if (activeTab == type) FontWeight.SemiBold else FontWeight.Normal
+                            ) 
+                        },
+                        leadingIcon = {
+                            Text(
+                                text = type.emoji,
+                                fontSize = 14.sp
+                            )
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = Color(0xFFF0F0F0),
+                            selectedContainerColor = PrimaryGreen.copy(alpha = 0.15f),
+                            labelColor = Color(0xFF666666),
+                            selectedLabelColor = PrimaryGreen
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = activeTab == type,
+                            borderColor = if (activeTab == type) PrimaryGreen.copy(alpha = 0.3f) else Color.Transparent,
+                            selectedBorderColor = PrimaryGreen.copy(alpha = 0.3f),
+                            borderWidth = 1.dp,
+                            selectedBorderWidth = 1.5.dp
                         )
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .background(PrimaryGreen, CircleShape)
-                        )
-                    }
-                    Text(
-                        text = "Chọn đăng xe hoặc pin để bắt đầu",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary,
-                        fontWeight = FontWeight.Medium
                     )
                 }
             }
 
-            // Enhanced Tab Row
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = Color(0xFFF5F5F5)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    CreateListingTab.values().forEach { tab ->
-                        EnhancedTab(
-                            tab = tab,
-                            isSelected = tab == activeTab,
-                            onClick = { onTabChange(tab) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
+            Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
 
-@Composable
-private fun EnhancedTab(
-    tab: CreateListingTab,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val scale by animateFloatAsState(
-        targetValue = if (isSelected) 1f else 0.96f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "scale"
-    )
-
-    Surface(
-        onClick = onClick,
-        modifier = modifier.scale(scale),
-        shape = RoundedCornerShape(12.dp),
-        color = if (isSelected) Color.White else Color.Transparent,
-        shadowElevation = if (isSelected) 4.dp else 0.dp
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    if (isSelected) {
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                PrimaryGreen.copy(alpha = 0.08f),
-                                PrimaryGreen.copy(alpha = 0.05f)
-                            )
-                        )
-                    } else {
-                        Brush.horizontalGradient(
-                            colors = listOf(Color.Transparent, Color.Transparent)
-                        )
-                    }
-                )
-                .padding(vertical = 16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = if (tab == CreateListingTab.Vehicle)
-                        Icons.Default.DirectionsCar
-                    else
-                        Icons.Default.BatteryChargingFull,
-                    contentDescription = null,
-                    tint = if (isSelected) PrimaryGreen else TextSecondary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = tab.label,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isSelected) PrimaryGreen else TextSecondary,
-                    fontSize = 15.sp
-                )
+            // Content based on selected tab
+            when (activeTab) {
+                ListingType.Vehicle -> VehicleForm(viewModel, uiState, snackbarHostState, onNavigateToDashboard)
+                ListingType.Battery -> BatteryForm(viewModel, uiState, snackbarHostState, onNavigateToDashboard)
             }
         }
     }
@@ -347,8 +156,12 @@ private fun EnhancedTab(
 @Composable
 private fun VehicleForm(
     viewModel: SellerCreateListingViewModel,
-    uiState: SellerCreateUiState
+    uiState: SellerCreateUiState,
+    snackbarHostState: SnackbarHostState,
+    onSuccess: () -> Unit
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
     var price by rememberSaveable { mutableStateOf("") }
@@ -356,501 +169,500 @@ private fun VehicleForm(
     var model by rememberSaveable { mutableStateOf("") }
     var year by rememberSaveable { mutableStateOf("") }
     var mileage by rememberSaveable { mutableStateOf("") }
-    var isAuction by rememberSaveable { mutableStateOf(false) }
-    var auctionEndsAt by rememberSaveable { mutableStateOf("") }
-    var startingPrice by rememberSaveable { mutableStateOf("") }
-    var bidIncrement by rememberSaveable { mutableStateOf("") }
-    var depositAmount by rememberSaveable { mutableStateOf("") }
-    var auctionEndsAtDisplay by rememberSaveable { mutableStateOf("") }
+    
+    // Warranty fields
+    var baseWarranty by rememberSaveable { mutableStateOf("") }
+    var batteryWarranty by rememberSaveable { mutableStateOf("") }
+    var drivetrainWarranty by rememberSaveable { mutableStateOf("") }
+    
+    // Dimensions
+    var length by rememberSaveable { mutableStateOf("") }
+    var width by rememberSaveable { mutableStateOf("") }
+    var height by rememberSaveable { mutableStateOf("") }
+    var curbWeight by rememberSaveable { mutableStateOf("") }
+    
+    // Performance
+    var topSpeed by rememberSaveable { mutableStateOf("") }
+    var motorType by rememberSaveable { mutableStateOf("") }
+    var horsepower by rememberSaveable { mutableStateOf("") }
+    var acceleration by rememberSaveable { mutableStateOf("") }
+    
+    // Battery & Charging
+    var range by rememberSaveable { mutableStateOf("") }
+    var chargeTime by rememberSaveable { mutableStateOf("") }
+    var chargingSpeed by rememberSaveable { mutableStateOf("") }
+    var batteryCapacity by rememberSaveable { mutableStateOf("") }
+    
     var selectedImages by remember { mutableStateOf(emptyList<Uri>()) }
-    var localError by rememberSaveable { mutableStateOf<String?>(null) }
-
-    // Specifications - Warranty
-    var warrantyBasic by rememberSaveable { mutableStateOf("") }
-    var warrantyBattery by rememberSaveable { mutableStateOf("") }
-    var warrantyDrivetrain by rememberSaveable { mutableStateOf("") }
-
-    // Specifications - Dimensions
-    var dimWidth by rememberSaveable { mutableStateOf("") }
-    var dimHeight by rememberSaveable { mutableStateOf("") }
-    var dimLength by rememberSaveable { mutableStateOf("") }
-    var dimCurbWeight by rememberSaveable { mutableStateOf("") }
-
-    // Specifications - Performance
-    var perfTopSpeed by rememberSaveable { mutableStateOf("") }
-    var perfMotorType by rememberSaveable { mutableStateOf("") }
-    var perfHorsepower by rememberSaveable { mutableStateOf("") }
-    var perfAcceleration by rememberSaveable { mutableStateOf("") }
-
-    // Specifications - Battery & Charging
-    var battRange by rememberSaveable { mutableStateOf("") }
-    var battChargeTime by rememberSaveable { mutableStateOf("") }
-    var battChargingSpeed by rememberSaveable { mutableStateOf("") }
-    var battCapacity by rememberSaveable { mutableStateOf("") }
-
-    val context = LocalContext.current
-    val timeFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm") }
-    val zoneId = remember { ZoneId.systemDefault() }
 
     val pickImagesLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(maxItems = 5)
     ) { uris ->
         if (uris.isNotEmpty()) {
-            selectedImages = uris
+            val newImages = (selectedImages + uris).take(5)
+            selectedImages = newImages
         }
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-        EnhancedListingCard(
-            title = "Thông tin xe",
-            icon = Icons.Default.DirectionsCar,
-            description = "Điền đầy đủ thông tin về phương tiện"
-        ) {
-            EnhancedListingTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = "Tiêu đề tin đăng",
-                icon = Icons.Default.Title,
-                placeholder = "VD: Tesla Model 3 2023 như mới"
-            )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+            .padding(bottom = 80.dp), // Extra padding for button
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Thông tin cơ bản
+        Text(
+            text = "Thông tin cơ bản",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1A1A1A)
+        )
+        
+        SimpleTextField(
+            value = title,
+            onValueChange = { title = it },
+            label = "Tiêu đề *",
+            placeholder = "Nhập tiêu đề xe"
+        )
 
-            EnhancedListingTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = "Mô tả chi tiết",
-                icon = Icons.Default.Description,
-                placeholder = "Mô tả tình trạng, đặc điểm nổi bật...",
-                minLines = 3
-            )
+        SimpleTextField(
+            value = description,
+            onValueChange = { description = it },
+            label = "Mô tả *",
+            placeholder = "Mô tả chi tiết về xe",
+            minLines = 3
+        )
 
-            EnhancedListingTextField(
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SimpleTextField(
                 value = price,
-                onValueChange = { price = digitsOnly(it) },
-                label = "Giá bán (₫)",
-                icon = Icons.Default.AttachMoney,
-                placeholder = "500000000",
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                onValueChange = { price = it.filter { char -> char.isDigit() } },
+                label = "Giá (VND) *",
+                placeholder = "0",
+                keyboardType = KeyboardType.Number,
+                modifier = Modifier.weight(1f)
             )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                EnhancedListingTextField(
-                    value = brand,
-                    onValueChange = { brand = it },
-                    label = "Thương hiệu",
-                    icon = Icons.Default.Business,
-                    placeholder = "Tesla, VinFast...",
-                    modifier = Modifier.weight(1f)
-                )
-                EnhancedListingTextField(
-                    value = model,
-                    onValueChange = { model = it },
-                    label = "Dòng xe",
-                    icon = Icons.Default.CarRental,
-                    placeholder = "Model 3, VF8...",
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                EnhancedListingTextField(
-                    value = year,
-                    onValueChange = { year = digitsOnly(it, 4) },
-                    label = "Năm sản xuất",
-                    icon = Icons.Default.CalendarToday,
-                    placeholder = "2023",
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-                EnhancedListingTextField(
-                    value = mileage,
-                    onValueChange = { mileage = digitsOnly(it) },
-                    label = "Số km đã đi",
-                    icon = Icons.Default.Speed,
-                    placeholder = "15000",
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-            }
-        }
-
-        // Specifications Section - Warranty
-        EnhancedListingCard(
-            title = "Bảo hành",
-            icon = Icons.Default.Shield,
-            description = "Thông tin bảo hành (tùy chọn)"
-        ) {
-            EnhancedListingTextField(
-                value = warrantyBasic,
-                onValueChange = { warrantyBasic = it },
-                label = "Bảo hành cơ bản",
-                icon = Icons.Default.VerifiedUser,
-                placeholder = "VD: 3 năm hoặc 100,000 km"
+            SimpleTextField(
+                value = brand,
+                onValueChange = { brand = it },
+                label = "Thương hiệu *",
+                placeholder = "Honda, Toyota...",
+                modifier = Modifier.weight(1f)
             )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                EnhancedListingTextField(
-                    value = warrantyBattery,
-                    onValueChange = { warrantyBattery = it },
-                    label = "Bảo hành pin",
-                    icon = Icons.Default.BatteryFull,
-                    placeholder = "VD: 8 năm",
-                    modifier = Modifier.weight(1f)
-                )
-                EnhancedListingTextField(
-                    value = warrantyDrivetrain,
-                    onValueChange = { warrantyDrivetrain = it },
-                    label = "Bảo hành động cơ",
-                    icon = Icons.Default.Engineering,
-                    placeholder = "VD: 5 năm",
-                    modifier = Modifier.weight(1f)
-                )
-            }
         }
 
-        // Specifications Section - Dimensions
-        EnhancedListingCard(
-            title = "Kích thước & Trọng lượng",
-            icon = Icons.Default.Straighten,
-            description = "Thông số kích thước (tùy chọn)"
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                EnhancedListingTextField(
-                    value = dimWidth,
-                    onValueChange = { dimWidth = it },
-                    label = "Chiều rộng",
-                    icon = Icons.Default.SwapHoriz,
-                    placeholder = "VD: 1850 mm",
-                    modifier = Modifier.weight(1f)
-                )
-                EnhancedListingTextField(
-                    value = dimHeight,
-                    onValueChange = { dimHeight = it },
-                    label = "Chiều cao",
-                    icon = Icons.Default.Height,
-                    placeholder = "VD: 1445 mm",
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                EnhancedListingTextField(
-                    value = dimLength,
-                    onValueChange = { dimLength = it },
-                    label = "Chiều dài",
-                    icon = Icons.Default.LinearScale,
-                    placeholder = "VD: 4694 mm",
-                    modifier = Modifier.weight(1f)
-                )
-                EnhancedListingTextField(
-                    value = dimCurbWeight,
-                    onValueChange = { dimCurbWeight = it },
-                    label = "Trọng lượng",
-                    icon = Icons.Default.FitnessCenter,
-                    placeholder = "VD: 1611 kg",
-                    modifier = Modifier.weight(1f)
-                )
-            }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SimpleTextField(
+                value = model,
+                onValueChange = { model = it },
+                label = "Model *",
+                placeholder = "Civic, Camry...",
+                modifier = Modifier.weight(1f)
+            )
+            SimpleTextField(
+                value = year,
+                onValueChange = { year = it.filter { char -> char.isDigit() }.take(4) },
+                label = "Năm sản xuất *",
+                placeholder = "2020",
+                keyboardType = KeyboardType.Number,
+                modifier = Modifier.weight(1f)
+            )
         }
 
-        // Specifications Section - Performance
-        EnhancedListingCard(
-            title = "Hiệu suất",
-            icon = Icons.Default.Speed,
-            description = "Thông số vận hành (tùy chọn)"
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                EnhancedListingTextField(
-                    value = perfTopSpeed,
-                    onValueChange = { perfTopSpeed = it },
-                    label = "Tốc độ tối đa",
-                    icon = Icons.Default.FlashOn,
-                    placeholder = "VD: 225 km/h",
-                    modifier = Modifier.weight(1f)
-                )
-                EnhancedListingTextField(
-                    value = perfAcceleration,
-                    onValueChange = { perfAcceleration = it },
-                    label = "Tăng tốc 0-100",
-                    icon = Icons.Default.RocketLaunch,
-                    placeholder = "VD: 5.6 giây",
-                    modifier = Modifier.weight(1f)
-                )
-            }
+        SimpleTextField(
+            value = mileage,
+            onValueChange = { mileage = it.filter { char -> char.isDigit() } },
+            label = "Số km đã đi *",
+            placeholder = "50000",
+            keyboardType = KeyboardType.Number
+        )
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                EnhancedListingTextField(
-                    value = perfMotorType,
-                    onValueChange = { perfMotorType = it },
-                    label = "Loại động cơ",
-                    icon = Icons.Default.SettingsSuggest,
-                    placeholder = "VD: Dual Motor AWD",
-                    modifier = Modifier.weight(1f)
-                )
-                EnhancedListingTextField(
-                    value = perfHorsepower,
-                    onValueChange = { perfHorsepower = it },
-                    label = "Công suất",
-                    icon = Icons.Default.Bolt,
-                    placeholder = "VD: 283 HP",
-                    modifier = Modifier.weight(1f)
-                )
-            }
+        // Thông số kỹ thuật (tùy chọn)
+        Text(
+            text = "Thông số kỹ thuật (tùy chọn)",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1A1A1A),
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        
+        // Bảo hành
+        Text(
+            text = "Bảo hành",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF666666)
+        )
+        
+        SimpleTextField(
+            value = baseWarranty,
+            onValueChange = { baseWarranty = it },
+            label = "Bảo hành cơ bản",
+            placeholder = "4 years / 50,000 miles"
+        )
+        
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SimpleTextField(
+                value = batteryWarranty,
+                onValueChange = { batteryWarranty = it },
+                label = "Bảo hành pin",
+                placeholder = "8 years / 120,000",
+                modifier = Modifier.weight(1f)
+            )
+            SimpleTextField(
+                value = drivetrainWarranty,
+                onValueChange = { drivetrainWarranty = it },
+                label = "Bảo hành hệ dẫn động",
+                placeholder = "8 years / 120,000",
+                modifier = Modifier.weight(1f)
+            )
         }
 
-        // Specifications Section - Battery & Charging
-        EnhancedListingCard(
-            title = "Pin & Sạc",
-            icon = Icons.Default.BatteryChargingFull,
-            description = "Thông số pin và sạc (tùy chọn)"
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                EnhancedListingTextField(
-                    value = battCapacity,
-                    onValueChange = { battCapacity = it },
-                    label = "Dung lượng pin",
-                    icon = Icons.Default.Battery6Bar,
-                    placeholder = "VD: 60 kWh",
-                    modifier = Modifier.weight(1f)
-                )
-                EnhancedListingTextField(
-                    value = battRange,
-                    onValueChange = { battRange = it },
-                    label = "Phạm vi hoạt động",
-                    icon = Icons.Default.MyLocation,
-                    placeholder = "VD: 510 km",
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                EnhancedListingTextField(
-                    value = battChargeTime,
-                    onValueChange = { battChargeTime = it },
-                    label = "Thời gian sạc",
-                    icon = Icons.Default.Timer,
-                    placeholder = "VD: 8-10 giờ (AC)",
-                    modifier = Modifier.weight(1f)
-                )
-                EnhancedListingTextField(
-                    value = battChargingSpeed,
-                    onValueChange = { battChargingSpeed = it },
-                    label = "Tốc độ sạc nhanh",
-                    icon = Icons.Default.ElectricBolt,
-                    placeholder = "VD: 250 kW DC",
-                    modifier = Modifier.weight(1f)
-                )
-            }
+        // Kích thước
+        Text(
+            text = "Kích thước",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF666666),
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SimpleTextField(
+                value = length,
+                onValueChange = { length = it },
+                label = "Chiều dài",
+                placeholder = "173.3 in",
+                modifier = Modifier.weight(1f)
+            )
+            SimpleTextField(
+                value = width,
+                onValueChange = { width = it },
+                label = "Chiều rộng",
+                placeholder = "74.8 in",
+                modifier = Modifier.weight(1f)
+            )
+        }
+        
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SimpleTextField(
+                value = height,
+                onValueChange = { height = it },
+                label = "Chiều cao",
+                placeholder = "66 in",
+                modifier = Modifier.weight(1f)
+            )
+            SimpleTextField(
+                value = curbWeight,
+                onValueChange = { curbWeight = it },
+                label = "Trọng lượng",
+                placeholder = "3569 lbs",
+                modifier = Modifier.weight(1f)
+            )
         }
 
-        EnhancedListingCard(
-            title = "Tuỳ chọn đấu giá",
-            icon = Icons.Default.Gavel,
-            description = "Cho phép người mua đặt giá thầu"
+        // Hiệu suất
+        Text(
+            text = "Hiệu suất",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF666666),
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SimpleTextField(
+                value = topSpeed,
+                onValueChange = { topSpeed = it },
+                label = "Tốc độ tối đa",
+                placeholder = "160 mph",
+                modifier = Modifier.weight(1f)
+            )
+            SimpleTextField(
+                value = motorType,
+                onValueChange = { motorType = it },
+                label = "Loại motor",
+                placeholder = "Single Motor RW",
+                modifier = Modifier.weight(1f)
+            )
+        }
+        
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SimpleTextField(
+                value = horsepower,
+                onValueChange = { horsepower = it },
+                label = "Công suất",
+                placeholder = "491 hp",
+                modifier = Modifier.weight(1f)
+            )
+            SimpleTextField(
+                value = acceleration,
+                onValueChange = { acceleration = it },
+                label = "Tăng tốc 0-60",
+                placeholder = "4.9 seconds",
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        // Pin và Sạc
+        Text(
+            text = "Pin và Sạc",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF666666),
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SimpleTextField(
+                value = range,
+                onValueChange = { range = it },
+                label = "Phạm vi hoạt động",
+                placeholder = "430 miles (EPA)",
+                modifier = Modifier.weight(1f)
+            )
+            SimpleTextField(
+                value = chargeTime,
+                onValueChange = { chargeTime = it },
+                label = "Thời gian sạc",
+                placeholder = "41 minutes",
+                modifier = Modifier.weight(1f)
+            )
+        }
+        
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SimpleTextField(
+                value = chargingSpeed,
+                onValueChange = { chargingSpeed = it },
+                label = "Tốc độ sạc",
+                placeholder = "275 kW",
+                modifier = Modifier.weight(1f)
+            )
+            SimpleTextField(
+                value = batteryCapacity,
+                onValueChange = { batteryCapacity = it },
+                label = "Dung lượng pin",
+                placeholder = "81 kWh",
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        // Image picker
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE0E0E0))
         ) {
-            EnhancedAuctionToggle(
-                isAuction = isAuction,
-                onToggle = {
-                    isAuction = it
-                    if (!it) {
-                        auctionEndsAt = ""
-                        auctionEndsAtDisplay = ""
-                        startingPrice = ""
-                        bidIncrement = ""
-                        depositAmount = ""
-                    }
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Hình ảnh (${selectedImages.size}/5)",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF333333)
+                )
+                OutlinedButton(
+                    onClick = {
+                        pickImagesLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = PrimaryGreen
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryGreen.copy(alpha = 0.5f))
+                ) {
+                    Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Chọn ảnh", fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 }
-            )
-
-            AnimatedVisibility(
-                visible = isAuction,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-
-                    EnhancedListingTextField(
-                        value = startingPrice,
-                        onValueChange = { startingPrice = digitsOnly(it) },
-                        label = "Giá khởi điểm",
-                        icon = Icons.Default.MonetizationOn,
-                        placeholder = "100000000",
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                    )
-
+                
+                // Image previews
+                if (selectedImages.isNotEmpty()) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        EnhancedListingTextField(
-                            value = bidIncrement,
-                            onValueChange = { bidIncrement = digitsOnly(it) },
-                            label = "Bước giá",
-                            icon = Icons.Default.TrendingUp,
-                            placeholder = "5000000",
-                            modifier = Modifier.weight(1f),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                        )
-                        EnhancedListingTextField(
-                            value = depositAmount,
-                            onValueChange = { depositAmount = digitsOnly(it) },
-                            label = "Đặt cọc",
-                            icon = Icons.Default.AccountBalance,
-                            placeholder = "10000000",
-                            modifier = Modifier.weight(1f),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        selectedImages.forEachIndexed { index, uri ->
+                            Box(
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
+                            ) {
+                                androidx.compose.foundation.Image(
+                                    painter = rememberAsyncImagePainter(uri),
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                )
+                                // Delete button
+                                IconButton(
+                                    onClick = {
+                                        selectedImages = selectedImages.filterIndexed { i, _ -> i != index }
+                                    },
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .size(24.dp)
+                                        .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Xóa ảnh",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Button(
+            onClick = {
+                // Validation
+                val validationErrors = mutableListOf<String>()
+                
+                if (title.trim().length < 10) {
+                    validationErrors.add("Tiêu đề phải có ít nhất 10 ký tự")
+                }
+                if (description.trim().length < 20) {
+                    validationErrors.add("Mô tả phải có ít nhất 20 ký tự")
+                }
+                if (price.isBlank() || price.toLongOrNull() == null || price.toLong() <= 0) {
+                    validationErrors.add("Giá phải là số dương hợp lệ")
+                }
+                if (brand.trim().isEmpty()) {
+                    validationErrors.add("Vui lòng nhập thương hiệu")
+                }
+                if (model.trim().isEmpty()) {
+                    validationErrors.add("Vui lòng nhập model")
+                }
+                if (year.length != 4 || year.toIntOrNull() == null) {
+                    validationErrors.add("Năm sản xuất phải là 4 chữ số")
+                }
+                if (mileage.isBlank() || mileage.toLongOrNull() == null) {
+                    validationErrors.add("Số km đã đi phải là số hợp lệ")
+                }
+                
+                if (validationErrors.isNotEmpty()) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = validationErrors.first(),
+                            duration = SnackbarDuration.Short
                         )
                     }
-
-                    // Auction End Time Picker
-                    EnhancedDateTimePicker(
-                        label = "Thời gian kết thúc đấu giá",
-                        icon = Icons.Default.Schedule,
-                        displayValue = auctionEndsAtDisplay,
-                        onDateTimeSelected = { isoDateTime, displayText ->
-                            auctionEndsAt = isoDateTime
-                            auctionEndsAtDisplay = displayText
-                        }
-                    )
+                    return@Button
                 }
-            }
-        }
-
-        EnhancedImagePickerSection(
-            title = "Ảnh phương tiện",
-            description = "Tối đa 5 ảnh, định dạng JPG/PNG",
-            selectedImages = selectedImages,
-            onPickImages = {
-                pickImagesLauncher.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                
+                val warranty = if (baseWarranty.isNotBlank() || batteryWarranty.isNotBlank() || drivetrainWarranty.isNotBlank()) {
+                    Warranty(
+                        basic = baseWarranty.ifBlank { null },
+                        battery = batteryWarranty.ifBlank { null },
+                        drivetrain = drivetrainWarranty.ifBlank { null }
+                    )
+                } else null
+                
+                val dimensions = if (length.isNotBlank() || width.isNotBlank() || height.isNotBlank() || curbWeight.isNotBlank()) {
+                    Dimensions(
+                        length = length.ifBlank { null },
+                        width = width.ifBlank { null },
+                        height = height.ifBlank { null },
+                        curbWeight = curbWeight.ifBlank { null }
+                    )
+                } else null
+                
+                val performance = if (topSpeed.isNotBlank() || motorType.isNotBlank() || horsepower.isNotBlank() || acceleration.isNotBlank()) {
+                    Performance(
+                        topSpeed = topSpeed.ifBlank { null },
+                        motorType = motorType.ifBlank { null },
+                        horsepower = horsepower.ifBlank { null },
+                        acceleration = acceleration.ifBlank { null }
+                    )
+                } else null
+                
+                val batteryAndCharging = if (range.isNotBlank() || chargeTime.isNotBlank() || chargingSpeed.isNotBlank() || batteryCapacity.isNotBlank()) {
+                    BatteryAndCharging(
+                        range = range.ifBlank { null },
+                        chargeTime = chargeTime.ifBlank { null },
+                        chargingSpeed = chargingSpeed.ifBlank { null },
+                        batteryCapacity = batteryCapacity.ifBlank { null }
+                    )
+                } else null
+                
+                val specs = VehicleSpecifications(
+                    warranty = warranty,
+                    dimensions = dimensions,
+                    performance = performance,
+                    batteryAndCharging = batteryAndCharging
                 )
-            }
-        )
-
-        AnimatedVisibility(
-            visible = localError != null,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
+                
+                val request = CreateVehicleRequest(
+                    title = title.trim(),
+                    description = description.trim(),
+                    price = price.toLong(),
+                    status = "AVAILABLE",
+                    brand = brand,
+                    model = model,
+                    year = year.toInt(),
+                    mileage = mileage.toLong(),
+                    specifications = specs,
+                    isAuction = null,
+                    startingPrice = null,
+                    bidIncrement = null,
+                    depositAmount = null
+                )
+                viewModel.createVehicle(request, selectedImages)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            enabled = !uiState.isSubmitting && title.isNotBlank() && price.isNotBlank() && brand.isNotBlank(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = PrimaryGreen,
+                disabledContainerColor = PrimaryGreen.copy(alpha = 0.5f)
+            ),
+            shape = RoundedCornerShape(12.dp)
         ) {
-            localError?.let { ErrorMessage(it) }
-        }
-
-        EnhancedSubmitButton(
-            text = if (uiState.isSubmitting) "Đang đăng tải..." else "Đăng tin xe",
-            isLoading = uiState.isSubmitting,
-            onClick = {
-                val trimmedTitle = title.trim()
-                val trimmedDescription = description.trim()
-
-                val validationError = when {
-                    trimmedTitle.isBlank() || trimmedDescription.isBlank() || price.isBlank() ||
-                            brand.isBlank() || model.isBlank() || year.isBlank() ||
-                            mileage.isBlank() -> "Vui lòng nhập đầy đủ thông tin bắt buộc."
-                    trimmedTitle.length < 5 -> "Tiêu đề cần tối thiểu 5 ký tự."
-                    trimmedDescription.length < 20 -> "Mô tả cần tối thiểu 20 ký tự."
-                    selectedImages.isEmpty() -> "Vui lòng chọn ít nhất 1 ảnh."
-                    year.toIntOrNull() == null || mileage.toLongOrNull() == null -> "Giá trị số không hợp lệ."
-                    price.toLongOrNull()?.let { it < MIN_CURRENCY_VALUE } != false -> "Giá bán tối thiểu 1.000₫."
-                    isAuction && auctionEndsAt.isBlank() ->
-                        "Vui lòng chọn thời gian kết thúc đấu giá."
-                    isAuction && (startingPrice.toLongOrNull()?.let { it < MIN_CURRENCY_VALUE } != false ||
-                            bidIncrement.toLongOrNull()?.let { it < MIN_CURRENCY_VALUE } != false ||
-                            depositAmount.toLongOrNull()?.let { it < MIN_CURRENCY_VALUE } != false) -> "Các giá trị tiền đấu giá phải từ 1.000₫."
-                    else -> null
-                }
-                if (validationError != null) {
-                    localError = validationError
-                } else {
-                    localError = null
-
-                    // Build specifications object with nullable values
-                    val specifications = VehicleSpecifications(
-                        warranty = if (warrantyBasic.isNotBlank() || warrantyBattery.isNotBlank() || warrantyDrivetrain.isNotBlank()) {
-                            Warranty(
-                                basic = warrantyBasic.takeIf { it.isNotBlank() },
-                                battery = warrantyBattery.takeIf { it.isNotBlank() },
-                                drivetrain = warrantyDrivetrain.takeIf { it.isNotBlank() }
-                            )
-                        } else null,
-                        dimensions = if (dimWidth.isNotBlank() || dimHeight.isNotBlank() || dimLength.isNotBlank() || dimCurbWeight.isNotBlank()) {
-                            Dimensions(
-                                width = dimWidth.takeIf { it.isNotBlank() },
-                                height = dimHeight.takeIf { it.isNotBlank() },
-                                length = dimLength.takeIf { it.isNotBlank() },
-                                curbWeight = dimCurbWeight.takeIf { it.isNotBlank() }
-                            )
-                        } else null,
-                        performance = if (perfTopSpeed.isNotBlank() || perfMotorType.isNotBlank() || perfHorsepower.isNotBlank() || perfAcceleration.isNotBlank()) {
-                            Performance(
-                                topSpeed = perfTopSpeed.takeIf { it.isNotBlank() },
-                                motorType = perfMotorType.takeIf { it.isNotBlank() },
-                                horsepower = perfHorsepower.takeIf { it.isNotBlank() },
-                                acceleration = perfAcceleration.takeIf { it.isNotBlank() }
-                            )
-                        } else null,
-                        batteryAndCharging = if (battRange.isNotBlank() || battChargeTime.isNotBlank() || battChargingSpeed.isNotBlank() || battCapacity.isNotBlank()) {
-                            BatteryAndCharging(
-                                range = battRange.takeIf { it.isNotBlank() },
-                                chargeTime = battChargeTime.takeIf { it.isNotBlank() },
-                                chargingSpeed = battChargingSpeed.takeIf { it.isNotBlank() },
-                                batteryCapacity = battCapacity.takeIf { it.isNotBlank() }
-                            )
-                        } else null
-                    )
-
-                    val request = CreateVehicleRequest(
-                        title = trimmedTitle,
-                        description = trimmedDescription,
-                        price = price.toLong(),
-                        status = "AVAILABLE",
-                        brand = brand,
-                        model = model,
-                        year = year.toInt(),
-                        mileage = mileage.toLong(),
-                        specifications = specifications,
-                        isAuction = if (isAuction) true else null,
-                        startingPrice = if (isAuction) startingPrice.toLongOrNull() else null,
-                        bidIncrement = if (isAuction) bidIncrement.toLongOrNull() else null,
-                        depositAmount = if (isAuction) depositAmount.toLongOrNull() else null
-                    )
-                    viewModel.createVehicle(request, selectedImages)
-                }
+            if (uiState.isSubmitting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Icon(
+                    Icons.Default.DirectionsCar, 
+                    contentDescription = null, 
+                    modifier = Modifier.size(20.dp),
+                    tint = Color(0xFF1A1A1A)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("Đăng bán xe", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1A1A1A))
             }
-        )
+        }
     }
 }
 
 @Composable
 private fun BatteryForm(
     viewModel: SellerCreateListingViewModel,
-    uiState: SellerCreateUiState
+    uiState: SellerCreateUiState,
+    snackbarHostState: SnackbarHostState,
+    onSuccess: () -> Unit
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
     var price by rememberSaveable { mutableStateOf("") }
@@ -858,858 +670,404 @@ private fun BatteryForm(
     var capacity by rememberSaveable { mutableStateOf("") }
     var year by rememberSaveable { mutableStateOf("") }
     var health by rememberSaveable { mutableStateOf("") }
+    
+    // Technical specs
+    var weight by rememberSaveable { mutableStateOf("") }
+    var voltage by rememberSaveable { mutableStateOf("") }
+    var chemistry by rememberSaveable { mutableStateOf("") }
+    var degradation by rememberSaveable { mutableStateOf("") }
+    var chargingTime by rememberSaveable { mutableStateOf("") }
+    var installation by rememberSaveable { mutableStateOf("") }
+    var warrantyPeriod by rememberSaveable { mutableStateOf("") }
+    var temperatureRange by rememberSaveable { mutableStateOf("") }
+    
     var selectedImages by remember { mutableStateOf(emptyList<Uri>()) }
-    var localError by rememberSaveable { mutableStateOf<String?>(null) }
 
     val pickImagesLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(maxItems = 5)
     ) { uris ->
-        if (uris.isNotEmpty()) selectedImages = uris
+        if (uris.isNotEmpty()) {
+            val newImages = (selectedImages + uris).take(5)
+            selectedImages = newImages
+        }
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-        EnhancedListingCard(
-            title = "Thông tin pin",
-            icon = Icons.Default.BatteryChargingFull,
-            description = "Điền đầy đủ thông tin về bộ pin"
-        ) {
-            EnhancedListingTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = "Tiêu đề tin đăng",
-                icon = Icons.Default.Title,
-                placeholder = "VD: Pin Tesla 75kWh còn mới 95%"
-            )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+            .padding(bottom = 80.dp), // Extra padding for button
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Thông tin cơ bản
+        Text(
+            text = "Thông tin cơ bản",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1A1A1A)
+        )
+        
+        SimpleTextField(
+            value = title,
+            onValueChange = { title = it },
+            label = "Tiêu đề *",
+            placeholder = "Nhập tiêu đề pin"
+        )
 
-            EnhancedListingTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = "Mô tả chi tiết",
-                icon = Icons.Default.Description,
-                placeholder = "Mô tả tình trạng, lịch sử sử dụng...",
-                minLines = 3
-            )
+        SimpleTextField(
+            value = description,
+            onValueChange = { description = it },
+            label = "Mô tả *",
+            placeholder = "Mô tả chi tiết về pin",
+            minLines = 3
+        )
 
-            EnhancedListingTextField(
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SimpleTextField(
                 value = price,
-                onValueChange = { price = digitsOnly(it) },
-                label = "Giá bán (₫)",
-                icon = Icons.Default.AttachMoney,
-                placeholder = "50000000",
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                onValueChange = { price = it.filter { char -> char.isDigit() } },
+                label = "Giá (VND) *",
+                placeholder = "0",
+                keyboardType = KeyboardType.Number,
+                modifier = Modifier.weight(1f)
             )
-
-            EnhancedListingTextField(
+            SimpleTextField(
                 value = brand,
                 onValueChange = { brand = it },
-                label = "Thương hiệu",
-                icon = Icons.Default.Business,
-                placeholder = "Tesla, CATL, LG..."
+                label = "Thương hiệu *",
+                placeholder = "Tesla, BYD, LG...",
+                modifier = Modifier.weight(1f)
             )
+        }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                EnhancedListingTextField(
-                    value = capacity,
-                    onValueChange = { capacity = digitsOnly(it) },
-                    label = "Dung lượng",
-                    icon = Icons.Default.BatteryFull,
-                    placeholder = "75 kWh",
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-                EnhancedListingTextField(
-                    value = health,
-                    onValueChange = { health = digitsOnly(it) },
-                    label = "Tình trạng",
-                    icon = Icons.Default.HealthAndSafety,
-                    placeholder = "95%",
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-            }
-
-            EnhancedListingTextField(
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SimpleTextField(
+                value = capacity,
+                onValueChange = { capacity = it.filter { char -> char.isDigit() } },
+                label = "Dung lượng (kWh) *",
+                placeholder = "75",
+                keyboardType = KeyboardType.Number,
+                modifier = Modifier.weight(1f)
+            )
+            SimpleTextField(
                 value = year,
-                onValueChange = { year = digitsOnly(it, 4) },
-                label = "Năm sản xuất",
-                icon = Icons.Default.CalendarToday,
-                placeholder = "2023",
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                onValueChange = { year = it.filter { char -> char.isDigit() }.take(4) },
+                label = "Năm sản xuất *",
+                placeholder = "2020",
+                keyboardType = KeyboardType.Number,
+                modifier = Modifier.weight(1f)
             )
         }
 
-        EnhancedImagePickerSection(
-            title = "Ảnh pin",
-            description = "Tối đa 5 ảnh, định dạng JPG/PNG",
-            selectedImages = selectedImages,
-            onPickImages = {
-                pickImagesLauncher.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                )
-            }
+        SimpleTextField(
+            value = health,
+            onValueChange = { health = it.filter { char -> char.isDigit() } },
+            label = "Sức khỏe pin (%) *",
+            placeholder = "85",
+            keyboardType = KeyboardType.Number
         )
 
-        AnimatedVisibility(
-            visible = localError != null,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
-        ) {
-            localError?.let { ErrorMessage(it) }
+        // Thông số kỹ thuật (tùy chọn)
+        Text(
+            text = "Thông số kỹ thuật (tùy chọn)",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1A1A1A),
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SimpleTextField(
+                value = weight,
+                onValueChange = { weight = it },
+                label = "Trọng lượng",
+                placeholder = "528kg",
+                modifier = Modifier.weight(1f)
+            )
+            SimpleTextField(
+                value = voltage,
+                onValueChange = { voltage = it },
+                label = "Điện áp",
+                placeholder = "408V",
+                modifier = Modifier.weight(1f)
+            )
+        }
+        
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SimpleTextField(
+                value = chemistry,
+                onValueChange = { chemistry = it },
+                label = "Loại hóa học",
+                placeholder = "NMC, LFP, NCA...",
+                modifier = Modifier.weight(1f)
+            )
+            SimpleTextField(
+                value = degradation,
+                onValueChange = { degradation = it },
+                label = "Mức độ suy giảm",
+                placeholder = "27% (73%",
+                modifier = Modifier.weight(1f)
+            )
+        }
+        
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SimpleTextField(
+                value = chargingTime,
+                onValueChange = { chargingTime = it },
+                label = "Thời gian sạc",
+                placeholder = "75 minutes",
+                modifier = Modifier.weight(1f)
+            )
+            SimpleTextField(
+                value = installation,
+                onValueChange = { installation = it },
+                label = "Yêu cầu lắp đặt",
+                placeholder = "Professional",
+                modifier = Modifier.weight(1f)
+            )
+        }
+        
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SimpleTextField(
+                value = warrantyPeriod,
+                onValueChange = { warrantyPeriod = it },
+                label = "Thời hạn bảo hành",
+                placeholder = "1 years",
+                modifier = Modifier.weight(1f)
+            )
+            SimpleTextField(
+                value = temperatureRange,
+                onValueChange = { temperatureRange = it },
+                label = "Phạm vi nhiệt độ",
+                placeholder = "-20°C to 60°C",
+                modifier = Modifier.weight(1f)
+            )
         }
 
-        EnhancedSubmitButton(
-            text = if (uiState.isSubmitting) "Đang đăng tải..." else "Đăng tin pin",
-            isLoading = uiState.isSubmitting,
-            onClick = {
-                val priceValue = price.toLongOrNull()
-                val capacityValue = capacity.toIntOrNull()
-                val yearValue = year.toIntOrNull()
-                val healthValue = health.toIntOrNull()
-                val trimmedTitle = title.trim()
-                val trimmedDescription = description.trim()
-
-                val validationError = when {
-                    trimmedTitle.isBlank() || trimmedDescription.isBlank() || price.isBlank() ||
-                            brand.isBlank() || capacity.isBlank() || year.isBlank() || health.isBlank() ->
-                        "Vui lòng nhập đầy đủ thông tin bắt buộc."
-                    trimmedTitle.length < 5 -> "Tiêu đề cần tối thiểu 5 ký tự."
-                    trimmedDescription.length < 20 -> "Mô tả cần tối thiểu 20 ký tự."
-                    selectedImages.isEmpty() -> "Vui lòng chọn ít nhất 1 ảnh."
-                    priceValue == null || priceValue < MIN_CURRENCY_VALUE ->
-                        "Giá bán tối thiểu 1.000₫."
-                    capacityValue == null || yearValue == null || healthValue == null ->
-                        "Giá trị số không hợp lệ."
-                    else -> null
-                }
-                if (validationError != null) {
-                    localError = validationError
-                } else {
-                    localError = null
-                    val request = CreateBatteryRequest(
-                        title = trimmedTitle,
-                        description = trimmedDescription,
-                        price = priceValue!!,
-                        status = "AVAILABLE",
-                        brand = brand,
-                        capacity = capacityValue!!,
-                        year = yearValue!!,
-                        health = healthValue!!,
-                        specifications = BatterySpecifications()
-                    )
-                    viewModel.createBattery(request, selectedImages)
-                }
-            }
-        )
-    }
-}
-
-@Composable
-private fun EnhancedListingCard(
-    title: String,
-    icon: ImageVector,
-    description: String? = null,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    var isVisible by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        delay(100)
-        isVisible = true
-    }
-
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { it / 3 }
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(8.dp, RoundedCornerShape(24.dp)),
-            shape = RoundedCornerShape(24.dp),
-            color = Color.White
+        // Image picker
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE0E0E0))
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Header with icon
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Text(
+                    text = "Hình ảnh (${selectedImages.size}/5)",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF333333)
+                )
+                OutlinedButton(
+                    onClick = {
+                        pickImagesLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = PrimaryGreen
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryGreen.copy(alpha = 0.5f))
                 ) {
-                    Box(
+                    Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Chọn ảnh", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                }
+                
+                // Image previews
+                if (selectedImages.isNotEmpty()) {
+                    Row(
                         modifier = Modifier
-                            .size(56.dp)
-//                            .shadow(6.dp, RoundedCornerShape(16.dp))
-                            .background(
-                                brush = Brush.linearGradient(
-                                    colors = listOf(
-                                        PrimaryGreen.copy(alpha = 0.15f),
-                                        PrimaryGreen.copy(alpha = 0.08f)
-                                    )
-                                ),
-                                shape = RoundedCornerShape(16.dp)
-                            ),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            tint = PrimaryGreen,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = TextPrimary
-                        )
-                        description?.let {
-                            Text(
-                                text = it,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = TextSecondary,
-                                fontWeight = FontWeight.Medium
-                            )
+                        selectedImages.forEachIndexed { index, uri ->
+                            Box(
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
+                            ) {
+                                androidx.compose.foundation.Image(
+                                    painter = rememberAsyncImagePainter(uri),
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                                // Delete button
+                                IconButton(
+                                    onClick = {
+                                        selectedImages = selectedImages.filterIndexed { i, _ -> i != index }
+                                    },
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .size(24.dp)
+                                        .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Xóa ảnh",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
+            }
+        }
 
-                content()
+        Button(
+            onClick = {
+                // Validation
+                val validationErrors = mutableListOf<String>()
+                
+                if (title.trim().length < 10) {
+                    validationErrors.add("Tiêu đề phải có ít nhất 10 ký tự")
+                }
+                if (description.trim().length < 20) {
+                    validationErrors.add("Mô tả phải có ít nhất 20 ký tự")
+                }
+                if (price.isBlank() || price.toLongOrNull() == null || price.toLong() <= 0) {
+                    validationErrors.add("Giá phải là số dương hợp lệ")
+                }
+                if (brand.trim().isEmpty()) {
+                    validationErrors.add("Vui lòng nhập thương hiệu")
+                }
+                if (capacity.isBlank() || capacity.toIntOrNull() == null || capacity.toInt() <= 0) {
+                    validationErrors.add("Dung lượng pin phải là số dương hợp lệ")
+                }
+                if (year.length != 4 || year.toIntOrNull() == null) {
+                    validationErrors.add("Năm sản xuất phải là 4 chữ số")
+                }
+                if (health.isBlank() || health.toIntOrNull() == null || health.toInt() !in 1..100) {
+                    validationErrors.add("Sức khỏe pin phải từ 1-100%")
+                }
+                
+                if (validationErrors.isNotEmpty()) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = validationErrors.first(),
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                    return@Button
+                }
+                
+                val specs = BatterySpecifications(
+                    weight = weight.ifBlank { null },
+                    voltage = voltage.ifBlank { null },
+                    chemistry = chemistry.ifBlank { null },
+                    degradation = degradation.ifBlank { null },
+                    chargingTime = chargingTime.ifBlank { null },
+                    installation = installation.ifBlank { null },
+                    warrantyPeriod = warrantyPeriod.ifBlank { null },
+                    temperatureRange = temperatureRange.ifBlank { null }
+                )
+                
+                val request = CreateBatteryRequest(
+                    title = title.trim(),
+                    description = description.trim(),
+                    price = price.toLong(),
+                    status = "AVAILABLE",
+                    brand = brand,
+                    capacity = capacity.toInt(),
+                    year = year.toInt(),
+                    health = health.toInt(),
+                    specifications = specs,
+                    isAuction = null,
+                    startingPrice = null,
+                    bidIncrement = null,
+                    depositAmount = null
+                )
+                viewModel.createBattery(request, selectedImages)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            enabled = !uiState.isSubmitting && title.isNotBlank() && price.isNotBlank() && brand.isNotBlank(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = PrimaryGreen,
+                disabledContainerColor = PrimaryGreen.copy(alpha = 0.5f)
+            ),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            if (uiState.isSubmitting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Icon(
+                    Icons.Default.BatteryChargingFull, 
+                    contentDescription = null, 
+                    modifier = Modifier.size(20.dp),
+                    tint = Color(0xFF1A1A1A)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("Đăng bán pin", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }
 }
 
 @Composable
-private fun EnhancedListingTextField(
+private fun SimpleTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
-    icon: ImageVector,
     placeholder: String = "",
-    modifier: Modifier = Modifier.fillMaxWidth(),
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    modifier: Modifier = Modifier,
+    keyboardType: KeyboardType = KeyboardType.Text,
     minLines: Int = 1
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = {
-            Text(
-                label,
-                fontWeight = FontWeight.Medium
-            )
-        },
-        placeholder = {
-            Text(
-                placeholder,
-                color = TextSecondary.copy(alpha = 0.5f)
-            )
-        },
-        leadingIcon = {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = PrimaryGreen,
-                modifier = Modifier.size(22.dp)
-            )
-        },
-        modifier = modifier,
-        keyboardOptions = keyboardOptions,
-        minLines = minLines,
-        maxLines = if (minLines > 1) 5 else 1,
-        shape = RoundedCornerShape(16.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = PrimaryGreen,
-            unfocusedBorderColor = Color(0xFFE8E8E8),
-            focusedContainerColor = Color(0xFFF8FCFF),
-            unfocusedContainerColor = Color.White,
-            focusedLabelColor = PrimaryGreen,
-            unfocusedLabelColor = TextSecondary
+    Column(modifier = modifier) {
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF333333),
+            modifier = Modifier.padding(bottom = 6.dp)
         )
-    )
-}
-
-@Composable
-private fun EnhancedAuctionToggle(
-    isAuction: Boolean,
-    onToggle: (Boolean) -> Unit
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onToggle(!isAuction) },
-        shape = RoundedCornerShape(18.dp),
-        color = if (isAuction) PrimaryGreen.copy(alpha = 0.08f) else Color(0xFFF5F5F5),
-        border = BorderStroke(
-            1.5.dp,
-            if (isAuction) PrimaryGreen.copy(alpha = 0.3f) else Color(0xFFE8E8E8)
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .background(
-                            if (isAuction) PrimaryGreen.copy(alpha = 0.15f) else Color.White,
-                            RoundedCornerShape(14.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Gavel,
-                        contentDescription = null,
-                        tint = if (isAuction) PrimaryGreen else TextSecondary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = "Bật chế độ đấu giá",
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
-                        fontSize = 16.sp
-                    )
-                    Text(
-                        text = "Cho phép người mua đặt giá thầu",
-                        color = TextSecondary,
-                        fontSize = 14.sp
-                    )
-                }
-            }
-
-            Switch(
-                checked = isAuction,
-                onCheckedChange = onToggle,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
-                    checkedTrackColor = PrimaryGreen,
-                    uncheckedThumbColor = Color.White,
-                    uncheckedTrackColor = Color(0xFFCCCCCC)
-                )
-            )
-        }
-    }
-}
-
-@Composable
-private fun EnhancedImagePickerSection(
-    title: String,
-    description: String,
-    selectedImages: List<Uri>,
-    onPickImages: () -> Unit
-) {
-    var isVisible by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        delay(200)
-        isVisible = true
-    }
-
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { it / 3 }
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(8.dp, RoundedCornerShape(24.dp)),
-            shape = RoundedCornerShape(24.dp),
-            color = Color.White
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
-                // Header
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(56.dp)
-//                            .shadow(6.dp, RoundedCornerShape(16.dp))
-                            .background(
-                                brush = Brush.linearGradient(
-                                    colors = listOf(
-                                        Color(0xFF9C27B0).copy(alpha = 0.15f),
-                                        Color(0xFF9C27B0).copy(alpha = 0.08f)
-                                    )
-                                ),
-                                shape = RoundedCornerShape(16.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Image,
-                            contentDescription = null,
-                            tint = Color(0xFF9C27B0),
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = TextPrimary
-                        )
-                        Text(
-                            text = description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-
-                // Upload button
-                Surface(
-                    onClick = onPickImages,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color.Transparent,
-                    border = BorderStroke(
-                        2.dp,
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                PrimaryGreen.copy(alpha = 0.5f),
-                                PrimaryGreen.copy(alpha = 0.5f)
-                            )
-                        )
-                    )
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color(0xFFF0F9FF),
-                                        Color.White
-                                    )
-                                )
-                            )
-                            .padding(vertical = 24.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(64.dp)
-                                    .background(
-                                        PrimaryGreen.copy(alpha = 0.12f),
-                                        CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.CameraAlt,
-                                    contentDescription = null,
-                                    tint = PrimaryGreen,
-                                    modifier = Modifier.size(32.dp)
-                                )
-                            }
-                            Text(
-                                text = "Chọn hình ảnh",
-                                fontWeight = FontWeight.Bold,
-                                color = PrimaryGreen,
-                                fontSize = 16.sp
-                            )
-                            Text(
-                                text = "Nhấn để chọn từ thư viện",
-                                color = TextSecondary,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-                }
-
-                // Selected images grid
-                if (selectedImages.isNotEmpty()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Đã chọn ${selectedImages.size} ảnh",
-                                fontWeight = FontWeight.SemiBold,
-                                color = TextPrimary,
-                                fontSize = 15.sp
-                            )
-                            Surface(
-                                shape = RoundedCornerShape(50),
-                                color = PrimaryGreen.copy(alpha = 0.15f)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.CheckCircle,
-                                        contentDescription = null,
-                                        tint = PrimaryGreen,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Text(
-                                        text = "Hợp lệ",
-                                        color = PrimaryGreen,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp
-                                    )
-                                }
-                            }
-                        }
-
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            itemsIndexed(selectedImages) { index, uri ->
-                                var visible by remember { mutableStateOf(false) }
-
-                                LaunchedEffect(Unit) {
-                                    delay(index * 100L)
-                                    visible = true
-                                }
-
-                                AnimatedVisibility(
-                                    visible = visible,
-                                    enter = scaleIn(tween(300)) + fadeIn(tween(300))
-                                ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(16.dp),
-                                        shadowElevation = 4.dp
-                                    ) {
-                                        Box {
-                                            AsyncImage(
-                                                model = uri,
-                                                contentDescription = null,
-                                                modifier = Modifier
-                                                    .size(110.dp)
-                                                    .clip(RoundedCornerShape(16.dp))
-                                            )
-                                            // Image number badge
-                                            Surface(
-                                                modifier = Modifier
-                                                    .align(Alignment.TopEnd)
-                                                    .padding(8.dp),
-                                                shape = CircleShape,
-                                                color = PrimaryGreen,
-                                                shadowElevation = 4.dp
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(28.dp)
-                                                        .padding(4.dp),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Text(
-                                                        text = "${index + 1}",
-                                                        color = Color.White,
-                                                        fontWeight = FontWeight.Bold,
-                                                        fontSize = 12.sp
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color(0xFFF5F5F5)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                tint = TextSecondary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text(
-                                text = "Chưa có hình ảnh nào được chọn",
-                                color = TextSecondary,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ErrorMessage(message: String) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = Color(0xFFFFEBEE),
-        border = BorderStroke(1.5.dp, Color(0xFFEF5350).copy(alpha = 0.3f))
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.ErrorOutline,
-                contentDescription = null,
-                tint = Color(0xFFD32F2F),
-                modifier = Modifier.size(24.dp)
-            )
-            Text(
-                text = message,
-                color = Color(0xFFD32F2F),
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun EnhancedSubmitButton(
-    text: String,
-    isLoading: Boolean,
-    onClick: () -> Unit
-) {
-    val scale by animateFloatAsState(
-        targetValue = if (!isLoading) 1f else 0.98f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "scale"
-    )
-
-    Surface(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .scale(scale),
-        enabled = !isLoading,
-        shape = RoundedCornerShape(20.dp),
-        color = Color.Transparent,
-        shadowElevation = if (!isLoading) 12.dp else 4.dp
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    brush = if (!isLoading) {
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                PrimaryGreen,
-                                Color(0xFF00BFA5)
-                            )
-                        )
-                    } else {
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                Color(0xFFCCCCCC),
-                                Color(0xFFBBBBBB)
-                            )
-                        )
-                    }
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            if (isLoading) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 3.dp
-                    )
-                    Text(
-                        text = text,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            } else {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CloudUpload,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Text(
-                        text = text,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.White,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                }
-            }
-        }
-    }
-}
-
-private enum class CreateListingTab(val label: String) {
-    Vehicle("Xe / Phương tiện"),
-    Battery("Pin / Bộ pin")
-}
-
-
-private const val MIN_CURRENCY_VALUE = 1_000L
-
-private fun digitsOnly(input: String, maxLength: Int? = null): String {
-    val filtered = input.filter { it.isDigit() }
-    return maxLength?.let { filtered.take(it) } ?: filtered
-}
-
-@Composable
-private fun EnhancedDateTimePicker(
-    label: String,
-    icon: ImageVector,
-    displayValue: String,
-    onDateTimeSelected: (isoDateTime: String, displayText: String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val context = LocalContext.current
-    val zoneId = ZoneId.systemDefault()
-    val displayFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale("vi", "VN"))
-    
-    OutlinedCard(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.outlinedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-    ) {
-        Surface(
-            onClick = {
-                openAuctionPicker(context, zoneId, displayFormatter, onDateTimeSelected)
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = { 
+                Text(
+                    text = placeholder, 
+                    color = Color(0xFFAAAAAA),
+                    fontSize = 14.sp
+                ) 
             },
-            color = Color.Transparent,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-                
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    
-                    Text(
-                        text = displayValue.ifBlank { "Chọn thời gian" },
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = if (displayValue.isBlank()) {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
-                        fontWeight = if (displayValue.isBlank()) FontWeight.Normal else FontWeight.Medium
-                    )
-                }
-                
-                Icon(
-                    imageVector = Icons.Default.DateRange,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            minLines = minLines,
+            maxLines = if (minLines > 1) 5 else 1,
+            shape = RoundedCornerShape(10.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = Color.White,
+                focusedContainerColor = Color.White,
+                unfocusedBorderColor = Color(0xFFD0D0D0),
+                focusedBorderColor = PrimaryGreen,
+                cursorColor = PrimaryGreen
+            ),
+            textStyle = LocalTextStyle.current.copy(
+                fontSize = 14.sp,
+                color = Color(0xFF1A1A1A)
+            )
+        )
     }
 }
 
-private fun openAuctionPicker(
-    context: Context,
-    zoneId: ZoneId,
-    formatter: DateTimeFormatter,
-    onResult: (iso: String, display: String) -> Unit
-) {
-    val now = LocalDateTime.now()
-    val datePicker = DatePickerDialog(
-        context,
-        { _, year, month, dayOfMonth ->
-            TimePickerDialog(
-                context,
-                { _, hourOfDay, minute ->
-                    val selected = LocalDateTime.of(year, month + 1, dayOfMonth, hourOfDay, minute)
-                    if (selected.isBefore(LocalDateTime.now())) {
-                        Toast.makeText(context, "Thời gian kết thúc phải lớn hơn hiện tại", Toast.LENGTH_SHORT).show()
-                    } else {
-                        val instant = selected.atZone(zoneId).toInstant()
-                        onResult(instant.toString(), selected.format(formatter))
-                    }
-                },
-                now.hour,
-                now.minute,
-                true
-            ).show()
-        },
-        now.year,
-        now.monthValue - 1,
-        now.dayOfMonth
-    )
-    datePicker.datePicker.minDate = System.currentTimeMillis()
-    datePicker.show()
+private enum class ListingType(val displayName: String, val emoji: String) {
+    Vehicle("Xe điện", "🚗"),
+    Battery("Pin điện", "🔋")
 }
