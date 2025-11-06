@@ -29,7 +29,6 @@ class WalletRepository(
     
     private fun getBearerToken(): String {
         val token = getAccessToken()
-            ?: throw IllegalStateException("Missing access token for wallet operations")
         return "Bearer $token"
     }
     

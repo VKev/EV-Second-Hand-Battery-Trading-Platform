@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.evsecondhand.data.remote.RetrofitClient
@@ -69,7 +70,8 @@ fun RegisterScreen(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        PrimaryGreen.copy(alpha = 0.1f),
+                        PrimaryGreen.copy(alpha = 0.05f),
+                        Color(0xFFF8FFF8),
                         Color.White
                     )
                 )
@@ -79,58 +81,72 @@ fun RegisterScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(horizontal = 24.dp, vertical = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo/Title
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 8.dp)
+            // Logo Section
+            Card(
+                modifier = Modifier
+                    .size(80.dp)
+                    .padding(bottom = 16.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = PrimaryGreen
+                ),
+                elevation = CardDefaults.cardElevation(12.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.ElectricBolt,
-                    contentDescription = "EV Market",
-                    tint = PrimaryGreen,
-                    modifier = Modifier.size(36.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "EV Market",
-                    fontSize = 36.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryGreen
-                )
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ElectricBolt,
+                        contentDescription = "EV Market",
+                        tint = Color.White,
+                        modifier = Modifier.size(44.dp)
+                    )
+                }
             }
+
+            Text(
+                text = "EV Market",
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                color = PrimaryGreen,
+                letterSpacing = 0.5.sp
+            )
             
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
                 text = "Tạo tài khoản mới",
-                fontSize = 16.sp,
-                color = Color.Gray
+                fontSize = 15.sp,
+                color = Color.Gray,
+                textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(40.dp))
             
             // Register Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White
                 ),
-                elevation = CardDefaults.cardElevation(8.dp)
+                elevation = CardDefaults.cardElevation(16.dp)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp)
+                        .padding(28.dp)
                 ) {
                     Text(
                         text = "Đăng ký",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryGreen
                     )
                     
                     Spacer(modifier = Modifier.height(24.dp))
@@ -266,12 +282,25 @@ fun RegisterScreen(
                     
                     // Error Message
                     if (authState is AuthState.Error) {
-                        Text(
-                            text = (authState as AuthState.Error).message,
-                            color = MaterialTheme.colorScheme.error,
-                            fontSize = 14.sp,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Text(
+                                text = (authState as AuthState.Error).message,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                fontSize = 14.sp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                textAlign = TextAlign.Start
+                            )
+                        }
                     }
                     
                     // Register Button
@@ -377,11 +406,15 @@ fun RegisterScreen(
                     // Login Link
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Đã có tài khoản? ", color = Color.Gray)
-                        TextButton(onClick = onNavigateToLogin) {
-                            Text("Đăng nhập", color = PrimaryGreen, fontWeight = FontWeight.Bold)
+                        Text("Đã có tài khoản? ", color = Color.Gray, fontSize = 14.sp)
+                        TextButton(
+                            onClick = onNavigateToLogin,
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text("Đăng nhập", color = PrimaryGreen, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
                     }
                 }

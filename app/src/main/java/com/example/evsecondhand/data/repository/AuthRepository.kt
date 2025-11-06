@@ -18,6 +18,8 @@ import com.google.firebase.database.ServerValue
 import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.json.JSONObject
+import retrofit2.HttpException
 import java.time.Instant
 
 class AuthRepository(
@@ -55,7 +57,9 @@ class AuthRepository(
             saveAuthData(response.data.accessToken, response.data.user)
             Result.success(response)
         } catch (e: Exception) {
-            Result.failure(e)
+            Log.e(TAG, "Login failed", e)
+            val errorMessage = extractErrorMessage(e)
+            Result.failure(Exception(errorMessage))
         }
     }
 
@@ -65,7 +69,9 @@ class AuthRepository(
             saveAuthData(response.data.accessToken, response.data.user)
             Result.success(response)
         } catch (e: Exception) {
-            Result.failure(e)
+            Log.e(TAG, "Registration failed", e)
+            val errorMessage = extractErrorMessage(e)
+            Result.failure(Exception(errorMessage))
         }
     }
 
@@ -198,5 +204,58 @@ class AuthRepository(
             createdAt = createdAt,
             updatedAt = updatedAt
         )
+    }
+
+    private fun extractErrorMessage(exception: Throwable): String {
+        if (exception is HttpException) {
+            val rawBody = try {
+                exception.response()?.errorBody()?.string()
+            } catch (ignored: Exception) {
+                null
+            }?.trim().orEmpty()
+
+            Log.d(TAG, "Raw error body: $rawBody")
+
+            if (rawBody.isNotBlank()) {
+                try {
+                    val json = JSONObject(rawBody)
+                    val message = json.optString("message").takeIf { it.isNotBlank() }
+                        ?: json.optJSONObject("error")?.optString("message")?.takeIf { it.isNotBlank() }
+                        ?: json.optJSONArray("errors")?.let { errors ->
+                            (0 until errors.length()).asSequence()
+                                .mapNotNull { errors.optString(it).takeIf { s -> s.isNotBlank() } }
+                                .firstOrNull()
+                        }
+
+                    if (!message.isNullOrBlank()) {
+                        Log.d(TAG, "Extracted message: $message")
+                        return message
+                    }
+                } catch (ignored: Exception) {
+                    Log.e(TAG, "Error parsing JSON", ignored)
+                }
+            }
+
+            // Fallback to HTTP error messages
+            return when (exception.code()) {
+                400 -> "Thông tin đăng nhập không hợp lệ. Vui lòng kiểm tra lại."
+                401 -> "Email hoặc mật khẩu không đúng."
+                403 -> "Bạn không có quyền truy cập."
+                404 -> "Không tìm thấy tài khoản."
+                409 -> "Email đã được sử dụng."
+                422 -> "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại."
+                in 500..599 -> "Lỗi máy chủ. Vui lòng thử lại sau."
+                else -> "Lỗi kết nối (HTTP ${exception.code()}). Vui lòng thử lại."
+            }
+        }
+
+        val message = exception.message.orEmpty()
+        return when {
+            message.contains("Unable to resolve host", ignoreCase = true) ->
+                "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối Internet."
+            message.contains("timeout", ignoreCase = true) ->
+                "Kết nối bị timeout. Vui lòng thử lại."
+            else -> exception.message ?: "Đã xảy ra lỗi. Vui lòng thử lại."
+        }
     }
 }
